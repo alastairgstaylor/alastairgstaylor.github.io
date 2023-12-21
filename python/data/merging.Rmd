@@ -1,0 +1,273 @@
+---
+title: '<font size="5">Data Handling in Python:</font><br>Merging'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../python.html)
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(out.width = "75%")
+knitr::opts_chunk$set(engine.path = "/usr/bin/python3.11")
+```
+
+<!-- Based off of code first written on 2019-08-28 -->
+
+Example Data
+============
+Here are the final log standings from the 2018-19 and 2019-20 English Premier League seasons, sorted alphabetically by team:
+
+```{python, results = "asis"}
+import pandas as pd
+
+EPL_2018_19 = pd.DataFrame({
+    'Team': [
+        'Arsenal', 'Bournemouth', 'Brighton & Hove Albion', 'Burnley', 'Cardiff City', 'Chelsea', 'Crystal Palace',
+        'Everton', 'Fulham', 'Huddersfield Town', 'Leicester City', 'Liverpool', 'Manchester City', 'Manchester United',
+        'Newcastle United', 'Southampton', 'Tottenham Hotspur', 'Watford', 'West Ham United', 'Wolverhampton Wanderers'
+    ],
+    'Points': [70, 45, 36, 40, 34, 72, 49, 54, 26, 16, 52, 97, 98, 66, 45, 39, 71, 50, 52, 57]
+})
+EPL_2019_20 = pd.DataFrame({
+    'Team': [
+        'Arsenal', 'Aston Villa', 'Bournemouth', 'Brighton & Hove Albion', 'Burnley', 'Chelsea', 'Crystal Palace',
+        'Everton', 'Leicester City', 'Liverpool', 'Manchester City', 'Manchester United', 'Newcastle United',
+        'Norwich City', 'Sheffield United', 'Southampton', 'Tottenham Hotspur', 'Watford', 'West Ham United',
+        'Wolverhampton Wanderers'
+    ],
+    'Points': [56, 35, 34, 41, 54, 66, 43, 49, 62, 99, 81, 66, 44, 21, 54, 52, 59, 34, 39, 59]
+})
+```
+
+```{r, echo = FALSE, results = "hold"}
+EPL_2018_19 <- data.frame(
+    "Team" = c(
+        "Arsenal", "Bournemouth", "Brighton & Hove Albion", "Burnley", "Cardiff City", "Chelsea", "Crystal Palace",
+        "Everton", "Fulham", "Huddersfield Town", "Leicester City", "Liverpool", "Manchester City", "Manchester United",
+        "Newcastle United", "Southampton", "Tottenham Hotspur", "Watford", "West Ham United", "Wolverhampton Wanderers"
+    ),
+    "Points" = c(70, 45, 36, 40, 34, 72, 49, 54, 26, 16, 52, 97, 98, 66, 45, 39, 71, 50, 52, 57)
+)
+EPL_2019_20 <- data.frame(
+    "Team" = c(
+        "Arsenal", "Aston Villa", "Bournemouth", "Brighton & Hove Albion", "Burnley", "Chelsea", "Crystal Palace",
+        "Everton", "Leicester City", "Liverpool", "Manchester City", "Manchester United", "Newcastle United",
+        "Norwich City", "Sheffield United", "Southampton", "Tottenham Hotspur", "Watford", "West Ham United",
+        "Wolverhampton Wanderers"
+    ),
+    "Points" = c(56, 35, 34, 41, 54, 66, 43, 49, 62, 99, 81, 66, 44, 21, 54, 52, 59, 34, 39, 59)
+)
+
+library(kableExtra)
+
+kable_input <- kable(EPL_2018_19)
+kable_styling(
+    kable_input, bootstrap_options = c("striped", "scale_down", "condensed"), full_width = F, font_size = 11,
+    position = "float_left"
+)
+kable_input <- kable(EPL_2019_20)
+kable_styling(
+    kable_input, bootstrap_options = c("striped", "scale_down", "condensed"), full_width = F, font_size = 11,
+    position = "center"
+)
+```
+
+In the real world, you would probably use data stored in spreadsheets. These can be imported into Python as data frames using the following code:
+
+```{python, eval = FALSE}
+# Import Excel spreadsheets as data frames
+df_1 = pd.read_excel('First Spreadsheet.xlsx')
+df_2 = pd.read_excel('Second Spreadsheet.xlsx')
+```
+
+Or, if you are using CSVs:
+
+```{python, eval = FALSE}
+# Import CSVs as data frames
+df_1 = pd.read_csv('First Spreadsheet.csv')
+df_2 = pd.read_csv('Second Spreadsheet.csv')
+```
+
+Concatenation
+=============
+Concatenating two data frames is actually *not* the same as merging them, it's simply combining them by sticking one on top of the other. It's done using the `concat()` function:
+
+```{python, results = "hold"}
+total = pd.concat([EPL_2018_19, EPL_2019_20])
+```
+
+Which produces the following:
+
+```{python, results = "hold"}
+print(total)
+```
+
+Append a data frame to the *side* of another with the `concat()` function by setting the `axis='columns'` or `axis='1'` keyword argument (these mean the same thing):
+
+```{python, results = "hold"}
+total = pd.concat([EPL_2018_19, EPL_2019_20], axis='columns')
+print(total)
+```
+
+Merging
+=======
+There are four types of merging:
+
+- Outer: keep all teams in *both* data frames (don't delete any data)
+- Left: keep all teams in the *left* data frame (but delete those in the right data frame that don't appear in the left)
+- Right: keep all teams in the *right* data frame (but delete those in the left data frame that don't appear in the right)
+- Inner: only keep the teams that are common to both data frames
+
+<center>
+![](outer.png) ![](left.png) <br>
+![](right.png) ![](inner.png)
+
+*(1) Keep all rows in both data frames, (2) keep all rows in the left data frame but only those in the right that are also in the left, (3) keep all rows in the right data frame but only those in the left that are also in the right, (4) keep only the rows that appear in both data frames*
+</center>
+
+Outer Merge (Keep all rows in both data frames)
+-----------------------------------------------
+Merge the data from both seasons by team name:
+
+```{python, results = "hold"}
+outer = pd.merge(EPL_2018_19, EPL_2019_20, on='Team', how='outer')
+print(outer)
+```
+
+As you can see, the teams that were in the league for both seasons (eg Arsenal and Bournemouth) have values in the "Points" columns for both seasons, whereas teams such as Aston Villa and Cardiff City which were promoted/relegated after the first season only have values for one season. For the other season there is an "NaN" (not a number). That is why there are 23 rows in the data frame when there are only 20 teams in the Premier League in any one season.
+
+Left Merge (Keep all rows in the left data frame)
+-------------------------------------------------
+For all teams that were in the Premier League for the 2018-19 season, see their points for that season and the one afterwards:
+
+```{python, results = "hold"}
+left = pd.merge(EPL_2018_19, EPL_2019_20, on='Team', how='left')
+print(left)
+```
+
+The three teams that got promoted into the Premier League are not shown here as their names do not appear in the left data frame.
+
+Right Merge (Keep all rows in the right data frame)
+---------------------------------------------------
+For all teams that were in the Premier League for the 2019-20 season, see their points for that season and the previous one:
+
+```{python, results = "hold"}
+right = pd.merge(EPL_2018_19, EPL_2019_20, on='Team', how='right')
+print(right)
+```
+
+The three teams that got relegated from the Premier League are not shown here as their names do not appear in the right data frame.
+
+Inner Merge (Keep only the rows that appear in both data frames)
+----------------------------------------------------------------
+To see the points for all the teams that were in the Premier League for both seasons:
+
+```{python, results = "hold"}
+inner = pd.merge(EPL_2018_19, EPL_2019_20, on='Team')
+print(inner)
+```
+
+The teams that got promoted and relegated from the Premier League are not shown here as their names do not appear in both data frames. As a result, only 17 rows remain. **This is the default behaviour of the `merge()` function**.
+
+Indicators
+----------
+By performing a merge with the `indicator=True` option set, you can get an extra column (called "`_merge`") that tells you from where that particular piece of data came:
+
+```{python, results = "hold"}
+df = pd.merge(EPL_2018_19, EPL_2019_20, on='Team', how='outer', indicator=True)
+print(df)
+```
+
+The teams that were in *both* data frames, *only the left* data frame or *only the right* data frame are labelled as such in the `_merge` column.
+
+Bonus: the "Exclusive Or" (XOR) Merge
+-------------------------------------
+There is no way to do a 'not inner' merge in one step (ie keep the teams that were in one season only), but it can be done in two steps using this indicator:
+
+```{python, results = "hold"}
+df = pd.merge(EPL_2018_19, EPL_2019_20, on='Team', how='outer', indicator=True)
+df = df[df['_merge'] != 'both']
+print(df)
+```
+
+These are the six teams that played in the Premier League for only one of the two seasons.
+
+Updating a Row
+==============
+Let's imagine we have a data frame containing out-of-date information that
+we want to *update* with data from a different data frame. For example, here
+is a database of Arsenal and Burnley's log points for three seasons, the last
+of which is incomplete:
+
+```{python, results = "hold"}
+import pandas as pd
+
+df = pd.DataFrame({
+    'Team': [
+        'Arsenal', 'Arsenal', 'Arsenal',
+        'Burnley', 'Burnley', 'Burnley'
+    ],
+    'Season': ['2018_19', '2019_20', '2020_21', '2018_19', '2019_20', '2020_21'],
+    'Points': [70, 56, 49, 40, 54, 36]
+})
+
+print(df)
+```
+
+After Arsenal won their next game, their tally of points for the 2020-21
+season increased from 49
+to 52. So the third row of the data frame (index 2) should look like this:
+
+```{python, results = "hold"}
+# The object containing the update must be a data frame (a series won't work)
+update = pd.DataFrame({
+    'Team': ['Arsenal'],
+    'Season': ['2020_21'],
+    'Points': [52]
+})
+
+print(update)
+```
+
+We want to edit the database and put in this new, correct information. In other
+words, we want to merge these two data frames *but also overwrite* the old one.
+This is known as *updating* and, usefully, the function that does this in
+Pandas is called `update()`. However, in order for it to work, the index of the
+new row (in the data frame `update`) needs to match the index of the old row
+(in the data frame `df`). That is how Python will know which row to overwrite.
+At the moment we have a problem because the original row (row 3 of
+data frame `df`) has index 2 while the new row (row 1 of data frame `update`)
+has index 0.
+
+Now, we *could* fix this manually by individually changing only these two
+indexes using hard-coded values,
+but it's much easier to change the
+indexes completely and instead **use overlapping columns as the indexes**.
+Then, the data frames can be 'merged' on the values they have in common and
+the information in the remaining columns updated accordingly:
+
+```{python, results = "hold"}
+# Use the team names and the seasons as the indexes
+df = df.set_index(['Team', 'Season'])
+update = update.set_index(['Team', 'Season'])
+# Merge and overwrite
+df.update(update)
+# Change back to using sequential numbers as the indexes
+df = df.reset_index()
+
+print(df)
+```
+
+Now we can see that Arsenal have 52 points (so far) in the 2020-21 season.
+
+[⇦ Back](../../python.html)
+
+</font>

@@ -1,0 +1,25 @@
+---
+title: C++
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        # number_sections: true
+        # toc: true
+        includes:
+            before_body: google_analytics.html
+---
+
+<font size="3">
+
+<!-- ## Introduction to C++ -->
+1. [Getting Started](cpp/intro/getting_started.html)
+2. [Booleans and If Statements](cpp/intro/booleans_if_statements.html)
+3. [Loops](cpp/intro/loops.html)
+4. [Vectors](cpp/intro/vectors.html)
+5. [Functions](cpp/intro/functions.html)
+6. [Scope](cpp/intro/scope.html)
+7. [Classes and Objects](cpp/intro/classes_objects.html)
+8. [References and Pointers](cpp/intro/references_pointers.html)
+
+</font>

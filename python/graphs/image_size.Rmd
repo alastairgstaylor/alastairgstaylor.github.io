@@ -1,0 +1,146 @@
+---
+title: '<font size="5">Graphs in Python:</font><br>Control the Image Size of Your Plots'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        # number_sections: true
+        # toc: true
+        includes:
+            before_body: ../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../python.html)
+
+Once you start plotting graphs that you want to do something with (eg adding them to a report, or a thesis, or a poster) you'll probably want to start changing their size, shape and quality (among other things). One option would be to try taking control of the exact dimensions of your graphs by specifying the exact number of pixels for each, but this can get confusing pretty quickly (especially when programs start rendering your images differently). It can also make it difficult to have all your graphs' formats consistent, or to quickly make changes to them all. One solution is to standardise them using the [A series of international paper sizes](https://en.wikipedia.org/wiki/Paper_size#A_series): A0, A1, A2, etc.
+
+Image Dimensions: Using the A Series
+------------------------------------
+There are three rules that determine the dimensions of A0, A1, A2, etc, pages:
+
+- If $a$ is the length of the long side of the page and $b$ the length of the short side then $\frac{a}{b} = \sqrt{2} = 1.412..$
+- The A0 size has an area of exactly 1 m<sup>2</sup>
+- Each successive page size (A1, A2, etc) has half the area of the previous
+
+Together, these three rules mean that a page of size A$x$ has an area $A$ of $0.5^x$ m<sup>2</sup> and:
+
+$a = \sqrt{2}b$
+
+$b = \frac{a}{\sqrt{2}}$
+
+Therefore, as $A = a \times b = 0.5^x$:
+
+$\frac{a^2}{\sqrt{2}} = 0.5^x$
+
+$\rightarrow a = \sqrt{\sqrt{2} \times 0.5^x}$
+
+$\rightarrow a = 1.189 \times 0.5^{0.5x}$
+
+and:
+
+$\sqrt{2} b^2 = 0.5^x$
+
+$\rightarrow b = \sqrt{\frac{1}{\sqrt{2}} \times 0.5^x}$
+
+$\rightarrow b = 0.841 \times 0.5^{0.5x}$
+
+These dimensions can be fed into Python to set the size of your plots but, unfortunately, this needs to be done in inches. So we need to convert from metres by multiplying by 39.37:
+
+$a = 46.82 \times 0.5^{0.5x}$ in
+
+$b = 33.11 \times 0.5^{0.5x}$ in
+
+The Python code then looks like this:
+
+```{python dpi = 50}
+import matplotlib.pyplot as plt
+
+# Data
+x = [0, 1, 2, 3, 4, 5, 6]
+y = [0, 1, 4, 9, 16, 25, 36]
+
+# Plot
+A = 6  # We want figures to be A6
+plt.figure(figsize=(46.82 * .5**(.5 * A), 33.11 * .5**(.5 * A)))
+plt.plot(x, y)
+plt.title('This image is A6, dpi=100')
+plt.show()
+```
+
+Alternatively, you can use `plt.rc('figure', figsize=(x, y))` to set the size for any and all figures created by your code:
+
+```{python dpi = 50}
+import matplotlib.pyplot as plt
+
+# We want figures to be A6
+A = 6
+plt.rc('figure', figsize=[46.82 * .5**(.5 * A), 33.11 * .5**(.5 * A)])
+
+# Data
+x = [0, 1, 2, 3, 4, 5, 6]
+y = [0, 1, 4, 9, 16, 25, 36]
+
+# Plot
+plt.plot(x, y)
+plt.title('This image is A6, dpi=100')
+```
+
+By default, Matplotlib renders images at 100 dpi (dots per inch) where 1 dot is one pixel so the above image is 585 x 413 pixels in size (corresponding to an A6 image's dimensions of 5.85 x 4.13 inches) when run in Python.
+
+Image Quality
+-------------
+If we double the 'quality' (ie set the dpi to 200 instead of the default 100) we will produce an image that is twice as large in *each dimension* (ie it will be 4 times the *size* of the same image at default quality). This means that an A6 image will now be 1170 x 827 px instead of 585 x 413 px. However, the *internal proportions* of the image will still be the same.
+
+Consider the below example. At default quality (100 dpi) an A5 image is ~1.41 times larger than an A6 image, so if we create an A6 image at 141 dpi it will be the same *size* as an A5 image but the elements in the image will be larger:
+
+```{python dpi = 70}
+# We want figures to be A6
+A = 6
+plt.rc('figure', figsize=[46.82 * .5**(.5 * A), 33.11 * .5**(.5 * A)], dpi=141)
+
+# Data
+x = [0, 1, 2, 3, 4, 5, 6]
+y = [0, 1, 4, 9, 16, 25, 36]
+
+# Plot
+plt.plot(x, y)
+plt.title('This image is A6, dpi=141')
+plt.show()
+```
+
+```{python, echo = FALSE}
+plt.close()
+```
+
+```{python dpi = 50}
+# We want figures to be A5
+A = 5
+plt.rc('figure', figsize=[46.82 * .5**(.5 * A), 33.11 * .5**(.5 * A)], dpi=100)
+
+# Data
+x = [0, 1, 2, 3, 4, 5, 6]
+y = [0, 1, 4, 9, 16, 25, 36]
+
+# Plot
+plt.plot(x, y)
+plt.title('This image is A5, dpi=100')
+plt.show()
+```
+
+```{python, echo = FALSE}
+plt.close()
+```
+
+As you can see, these images are the same size but the second one (A5) has smaller text and is thus more suited to being displayed in a large size in a report or on a poster.
+
+Conclusion
+----------
+1. Choose how large you want your plot to be when it is finally displayed (eg if you are using it in a thesis then a size A6 image on an A4 page - ie one that takes up a quarter of the whole page - usually looks good)
+2. From there, increasing the dpi will increase the quality
+3. Increased dpi will make the image size larger, so you just need to make sure you are still displaying it at the intended size when you add it to your thesis/report/poster
+
+[⇦ Back](../../python.html)
+
+</font>

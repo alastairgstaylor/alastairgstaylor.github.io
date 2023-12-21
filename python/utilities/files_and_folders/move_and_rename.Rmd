@@ -1,0 +1,288 @@
+---
+title: '<font size="5">Utilities in Python:</font><br>Move and Rename Files'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../../python.html)
+
+Following on from [this page](os_pathlib_modules.html) about the `os` and `pathlib` modules, here's how to move and rename files in Python:
+
+Python Packages
+===============
+The code on this page uses the `os`, `pathlib` and `datetime` modules which come pre-installed with Python. Import them into your script as follows:
+
+```{python}
+import os
+from pathlib import Path
+from datetime import datetime
+```
+
+Create Folders and Files
+========================
+Folders can be created with `os.makedirs()`. Use the `exist_ok=True` option to prevent an error being created if the folder already exists:
+
+```{python}
+# Create Folders
+os.makedirs('Input Folder', exist_ok=True)
+os.makedirs('Output Folder', exist_ok=True)
+```
+
+Files can be created with `open()`, `write()` and `close()`:
+
+```{python, results='hide'}
+paths = [
+    'Input Folder/Example File 1.txt',
+    'Input Folder/Example File 2.txt',
+    'Input Folder/Example File 3.txt',
+    'Input Folder/Example File 4.txt',
+]
+# Create files
+for path in paths:
+    # Open file in 'write' mode
+    f = open(path, 'w+')
+    # Write to a file
+    f.write('Hi, mom')
+    # Close the file
+    f.close()
+```
+
+Folder Admin
+============
+Define the input- and output-folders where you want to move your files from and to:
+
+```{python}
+# Folder admin
+move_from = 'Input Folder'
+move_to = 'Output Folder'
+```
+
+Although strings can be used for this (as has been done above), it's good practice to instead use *path objects* from the `pathliib` module:
+
+```{python}
+# Folder admin
+move_from = Path('Input Folder')
+move_to = Path('Output Folder')
+```
+
+It's more than just the fact that Path objects can be easier to work with, it's the principle:
+
+> In general, you want objects to *be what they are:* numbers should be ints or floats, names should be strings and file paths should be path objects. This helps to ensure that your code does what you want it to do and makes it easier for anyone reading your code to work out what it does.
+
+File Admin
+==========
+We can list the files in our input directory with the `os.listdir()` function:
+
+```{python}
+# List the files in a directory
+filenames = os.listdir(move_from)
+
+print(filenames)
+```
+
+These files won't necessarily be in alphabetical order. If you want them to be, it's worthwhile explicitly sorting them by using the `sorted()` function on the list:
+
+```{python}
+# List the files in a directory in alphabetical order
+filenames = sorted(os.listdir(move_from))
+
+print(filenames)
+```
+
+If there are some files you want to exclude from whatever it is you are doing, you can remove them from the list using the `.remove()` method (not to be confused with the `os.remove()` function which deletes files):
+
+```{python}
+# Remove files
+filenames.remove('Example File 3.txt')
+
+print(filenames)
+```
+
+If you are running your script in the same folder as the files you want to move/rename, you will see the name of your script included in `os.listdir()`'s output. This isn't a good thing - we don't want a script to move and/or rename itself while you're in the process of running it! You can exclude it manually using `filenames.remove('Name of Script.py')` but, of course, you will need to change it if you ever copy this code into another file. A more robust way to do this would be to get the name of the script automatically using the `__file__` parameter. This parameter (called "dunder file" - short for "double-underscore file") is created automatically when you run a script and contains its path:
+
+```{python, echo = FALSE}
+__file__ = '/home/username/Documents/Python Script.py'
+```
+
+```{python}
+# Get the path of the current script
+print(__file__)
+```
+
+The file name can then be extracted using `os.path.basename()`:
+
+```{python}
+# Get the file name of the current script
+print(os.path.basename(__file__))
+```
+
+This can be used in conjunction with `.remove()`. However, if you then use your script with the input folder not being the current directory it will throw an error (because the `.remove()` function will try to remove your script's name from the list created by `os.listdir()` but won't find it). To get around this and make your script completely robust, make it able to catch this error should it arise:
+
+```{python}
+# Remove the script's name from the list of files if it is in there
+try:
+    filenames.remove(os.path.basename(__file__))
+except ValueError:
+    pass
+```
+
+Move Files
+==========
+Python can't be used to move files directly, but it can be used to run system commands in the terminal/command line. One such command is `mv` which **m**o**v**es files, so that can be invoked for our purposes:
+
+```{python, results = 'hide'}
+# Folder admin
+move_from = Path('Input Folder')
+move_to = Path('Output Folder')
+# List the files in a directory
+filenames = os.listdir(move_from)
+# Remove the script's name from the list of files, if it is in there
+try:
+    filenames.remove(os.path.basename(__file__))
+except ValueError:
+    pass
+# Move files from the input folder to the output folder
+for filename in filenames:
+    path_in = Path(move_from, filename)
+    path_out = Path(move_to, filename)
+    os.system(f'mv "{path_in}" "{path_out}"')
+```
+
+Let's check that it's worked:
+
+```{python}
+# Check what files are in the input folder
+print(os.listdir(move_from))
+```
+
+```{python}
+# Check what files are in the output folder
+print(os.listdir(move_to))
+```
+
+Rename Files
+=============
+This is done with the `os.rename()` function. Of course, you can change a file's name to whatever you want (provided you don't use any of your filesystem's [reserved characters](https://en.wikipedia.org/wiki/Filename)) but in this example I will change the files' names by appending the timestamps from when they were last modified. This timestamp is provided by the `os.path.getmtime()` function (**get** the **m**odified **time**) and is a number that represents the time in 'seconds since the Epoch'. We can convert that to a human-readable timestamp using the `datetime` module:
+
+```{python}
+# List the files in a directory
+filenames = os.listdir(move_to)
+
+# Iterate over all the files I want to rename
+for filename in filenames:
+    # Get the paths to the files
+    path_old = Path(move_to, filename)
+    # Get the modification timestamps
+    last_modified = os.path.getmtime(path_old)
+    # Convert to datetime format
+    last_modified = datetime.fromtimestamp(int(last_modified))
+    # Create new filename
+    stem = path_old.stem
+    last_modified = str(last_modified).replace(':', '.')
+    extension = path_old.suffix
+    filename_new = stem + f' ({last_modified})' + extension
+    print(filename_new)
+    # Create new full path
+    path_new = Path(move_to, filename_new)
+    # Rename it
+    os.rename(path_old, path_new)
+```
+
+Change the ISO 8601 Datetime String into a Different ISO 8601 Format
+--------------------------------------------------------------------
+The [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format specifies that dates should be represented as `YYYY-MM-DD` and times as `hh:mm:ss`, and this convention has been followed in the filenames above (except for the fact that the colons have been replaced with full stops because colons are reserved characters). Another ISO 8601 format is `YYYYMMDDThhmmssZ`, which is more filename-friendly but a little less readable. Here's how to convert from this second format to the first:
+
+```{python}
+# The filename to change
+filename = Path('20220906T215004Z.txt')
+
+# Get the file root
+file_root = filename.stem
+# Get the extension
+extension = filename.suffix
+
+print(extension)
+```
+
+```{python}
+# Convert the timestamp format
+dt = datetime.strptime(file_root, '%Y%m%dT%H%M%SZ')
+# Make it file name-friendly
+file_root_new = str(dt).replace(':', '.')
+
+print(file_root_new)
+```
+
+```{python}
+# Construct the new filename
+filename_new = file_root_new + extension
+
+print(filename_new)
+```
+
+```{python, eval = FALSE}
+# Rename
+os.rename(filename, filename_new)
+```
+
+Ensure the Extensions are Lowercase
+-----------------------------------
+Sometimes programmes will create extensions that are capitals. This doesn't really matter, but here's some code that will convert the extensions in a list of filenames into lowercase letters. Once this is done (or at the same time) these files can be renamed.
+
+```{python}
+# Create a list of filenames with capitalised extensions
+filenames = [
+    'DSC03001.JPG',
+    'DSC03002.JPG',
+    'DSC03003.JPG',
+]
+
+# Convert extensions to lowercase letters
+for i, filename in enumerate(filenames):
+    # Get extension
+    extension = filename.split('.')[-1]
+    # Replace the extension if it is capitalised
+    if extension == extension.upper():
+        basename = filename.removesuffix(extension)
+        new_filename = basename + extension.lower()
+        filenames[i] = new_filename
+
+print(filenames)
+```
+
+Delete Folders and Files
+========================
+Files can be deleted with `os.remove()`:
+
+```{python}
+for file in os.listdir('Output Folder'):
+    os.remove(Path('Output Folder', file))
+```
+
+This is not the same as the `.remove()` method! That is used to remove an item from a list:
+
+```{python}
+ls = ['A', 'B', 'C']
+ls.remove('A')
+
+print(ls)
+```
+
+Empty folders can be deleted with `os.rmdir()`:
+
+```{python}
+os.rmdir('Input Folder')
+os.rmdir('Output Folder')
+```
+
+[⇦ Back](../../../python.html)
+
+</font>

@@ -1,0 +1,318 @@
+---
+title: '<font size="5">Graphs in Python:</font><br>Receiver Operating Characteristic Curves<font size="5"><br>_without using axes objects_</font>'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../../python.html)
+
+*This page only focuses on **plotting** ROC curves, not on how to do a full diagnostic accuracy analysis.*
+
+Data
+====
+For this page we will use the Titanic dataset; a database of the passengers aboard the ill-fated Titanic passenger ship that sunk in 1912. Specifically, we will be asking the question:
+
+> Can the amount of money a passenger paid for their ticket be used to predict whether or not they survived?
+
+As such, the **fare** that they paid will be used as the *score* data and whether or not they **survived** (where `1 = survived` and `0 = died`) will be used as the *true* data.
+
+The data can be downloaded from the Stanford website using Pandas:
+
+```{python, results = 'hide'}
+import pandas as pd
+
+# Settings for displaying pandas data frames
+pd.set_option('display.max_columns', 20)
+pd.set_option('display.max_colwidth', 20)
+pd.set_option('display.width', 1000)
+
+# Download data
+df = pd.read_csv('https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/stuff/titanic.csv')
+# Show data
+print(df.head().to_html(index=False))
+```
+
+The first five rows look like this:
+
+<div id="striped" class="section level1">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+
+<tr style="text-align: right;">
+  <th>Survived</th>
+  <th>Pclass</th>
+  <th>Name</th>
+  <th>Sex</th>
+  <th>Age</th>
+  <th>Sib/Spou</th>
+  <th>Par/Child</th>
+  <th>Fare</th>
+</tr>
+<tr>
+  <td>0</td>
+  <td>3</td>
+  <td>Mr. Owen Harris Braund</td>
+  <td>male</td>
+  <td>22.0</td>
+  <td>1</td>
+  <td>0</td>
+  <td>7.2500</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>Mrs. John Bradley (Florence Briggs Thayer) Cumings</td>
+  <td>female</td>
+  <td>38.0</td>
+  <td>1</td>
+  <td>0</td>
+  <td>71.2833</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td>3</td>
+  <td>Miss. Laina Heikkinen</td>
+  <td>female</td>
+  <td>26.0</td>
+  <td>0</td>
+  <td>0</td>
+  <td>7.9250</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>Mrs. Jacques Heath (Lily May Peel) Futrelle</td>
+  <td>female</td>
+  <td>35.0</td>
+  <td>1</td>
+  <td>0</td>
+  <td>53.1000</td>
+</tr>
+<tr>
+  <td>0</td>
+  <td>3</td>
+  <td>Mr. William Henry Allen</td>
+  <td>male</td>
+  <td>35.0</td>
+  <td>0</td>
+  <td>0</td>
+  <td>8.0500</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Create ROC Curve from First Principles
+======================================
+First, import the necessary libraries and customise the settings you will use for all your plots:
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Make images A6
+A = 6
+plt.rc('figure', figsize=[46.82 * .5**(.5 * A), 33.11 * .5**(.5 * A)])
+# Use latex for the plot labels
+plt.rc('text', usetex=True)
+# Use a serif font for the plot labels
+plt.rc('font', family='serif')
+# Be able to use greek symbols in the plot labels
+plt.rc('text.latex', preamble=r'\usepackage{textgreek}')
+```
+
+Next, extract the data you will be using to create the ROC curve from the data frame. In our case, the "Fare" is the score data and "Survived" is the truth/outcome data:
+
+```{python}
+# Extract the data of interest from the data frame
+y = df['Survived'].values
+score = df['Fare'].values
+```
+
+Next, initialise the variables that will be used for generating the plot:
+
+- The true positive rates (sensitivity) will be plotted on the y-axis and the false positive rates (1-specificity) will be plotted on the x-axis
+- The thresholds will be each of the cut-off values (for, in this case, ticket fare) for which true and false positive rate will be calculated. We can thus just use the fare prices themselves, plus 0, which guarantees that there will be no-one who paid less than the minimum threshold (as no-one paid less than 0) or more than the maximum threshold (as no-one paid more than the highest fare).
+- The total number of positive outcomes (people who survived) and negative outcomes (people who died) is needed for calculating rate
+
+```{python}
+# Initialise the false positive rates
+fpr = []
+# Initialise the true positive rates
+tpr = []
+# Thresholds to iterate through
+thresholds = [0] + sorted(score)
+# Get the number of positive and negative results
+P = sum(y)
+N = len(y) - P
+```
+
+For each threshold (ie for each fare price), calculate the true positive rate and the false positive rate associated with using it as a cut-off for predicting survival:
+
+```{python}
+# Iterate through all thresholds and determine the fraction of true positives
+# and false negatives found at every threshold
+for threshold in thresholds:
+    FP = 0
+    TP = 0
+    for i in range(len(score)):
+        if (score[i] > threshold):
+            if y[i] == 1:
+                TP += 1
+            if y[i] == 0:
+                FP += 1
+    fpr.append(FP / float(N))
+    tpr.append(TP / float(P))
+```
+
+Convert the false positive rate into specificity (which is what is more usually plotted):
+
+```{python}
+# Get specificity from false positive rate
+spec = [1 - x for x in fpr]
+```
+
+Use the trapezoidal rule to calculate the area under the curve:
+
+```{python}
+# Get the area under the curve from the trapezoidal rule (using Numpy)
+AUC = -np.trapz(spec, tpr)
+```
+
+Now we can use Matplotlib to create the plot:
+
+```{python, results = 'hide', eval = FALSE}
+#
+# Plot
+#
+# Use an f-string to include the AUC in the title
+plt.title('Receiver Operating Characteristic Curve\n' f'(AUC = {AUC:4.2})')
+# Plot the ROC curve
+plt.plot(spec, tpr, 'k-')
+# Plot the diagonal line (be careful to not start at the origin)
+plt.plot([1, 0], [0, 1], 'k-', alpha=0.3)
+# Reverse the x-axis
+plt.ylabel('Sensitivity')
+plt.ylim([0, 1])
+plt.xlabel('Specificity')
+plt.xlim([1, 0])
+# Make the plot square
+plt.gca().set_aspect(abs(max(fpr) - min(fpr)) / abs(max(tpr) - min(tpr)))
+
+plt.show()
+```
+
+```{python, results = 'hide', echo = FALSE}
+#
+# Plot
+#
+# Use an f-string to include the AUC in the title
+plt.title('Receiver Operating Characteristic Curve\n' f'(AUC = {AUC:4.2})')
+# Plot the ROC curve
+plt.plot(spec, tpr, 'k-')
+# Plot the diagonal line (be careful to not start at the origin)
+plt.plot([1, 0], [0, 1], 'k-', alpha=0.3)
+# Reverse the x-axis
+plt.ylabel('Sensitivity')
+plt.ylim([0, 1])
+plt.xlabel('Specificity')
+plt.xlim([1, 0])
+# Make the plot square
+plt.gca().set_aspect(abs(max(fpr) - min(fpr)) / abs(max(tpr) - min(tpr)))
+
+plt.show()
+```
+
+Create ROC Curve Using scikit-learn
+===================================
+Now repeat the process using the functions provided by the `sklearn` package. This is not only quicker in terms of number of lines of code but it also runs quicker:
+
+```{python, results = 'hide', eval = FALSE}
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn.metrics as metrics
+
+# Download data
+df = pd.read_csv('https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/stuff/titanic.csv')
+
+# Extract the data of interest from the data frame
+y = df['Survived'].values
+score = df['Fare'].values
+# Generate the false positive rates, true positive rates and thresholds
+fpr, tpr, thresholds = metrics.roc_curve(y, score)
+# Generate the area under the curve
+# This is equivalent to auc = metrics.roc_auc_score(y, score)
+auc = metrics.auc(fpr, tpr)
+# Get specificity from false positive rate
+spec = [1 - x for x in fpr]
+
+#
+# Plot
+#
+# Use an f-string to include the AUC in the title
+plt.title('Receiver Operating Characteristic Curve\n' f'(AUC = {AUC:4.2})')
+# Plot the ROC curve
+plt.plot(spec, tpr, 'k-')
+# Plot the diagonal line (be careful to not start at the origin)
+plt.plot([1, 0], [0, 1], 'k-', alpha=0.3)
+# Reverse the x-axis
+plt.ylabel('Sensitivity')
+plt.ylim([0, 1])
+plt.xlabel('Specificity')
+plt.xlim([1, 0])
+# Make the plot square
+plt.gca().set_aspect(abs(max(fpr) - min(fpr)) / abs(max(tpr) - min(tpr)))
+
+plt.show()
+```
+
+```{python, results = 'hide', echo = FALSE}
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn.metrics as metrics
+
+# Download data
+df = pd.read_csv('https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/stuff/titanic.csv')
+
+# Extract the data of interest from the data frame
+y = df['Survived'].values
+score = df['Fare'].values
+# Generate the false positive rates, true positive rates and thresholds
+fpr, tpr, thresholds = metrics.roc_curve(y, score)
+# Generate the area under the curve
+# This is equivalent to auc = metrics.roc_auc_score(y, score)
+auc = metrics.auc(fpr, tpr)
+# Get specificity from false positive rate
+spec = [1 - x for x in fpr]
+
+#
+# Plot
+#
+# Use an f-string to include the AUC in the title
+plt.title('Receiver Operating Characteristic Curve\n' f'(AUC = {AUC:4.2})')
+# Plot the ROC curve
+plt.plot(spec, tpr, 'k-')
+# Plot the diagonal line (be careful to not start at the origin)
+plt.plot([1, 0], [0, 1], 'k-', alpha=0.3)
+# Reverse the x-axis
+plt.ylabel('Sensitivity')
+plt.ylim([0, 1])
+plt.xlabel('Specificity')
+plt.xlim([1, 0])
+# Make the plot square
+plt.gca().set_aspect(abs(max(fpr) - min(fpr)) / abs(max(tpr) - min(tpr)))
+
+plt.show()
+```
+
+[⇦ Back](../../../python.html)
+
+</font>

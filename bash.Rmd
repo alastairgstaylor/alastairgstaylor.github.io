@@ -1,0 +1,30 @@
+---
+title: Bash and Z Shell
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        # number_sections: true
+        # toc: true
+        includes:
+            before_body: google_analytics.html
+---
+
+<font size="3">
+
+## Introduction
+1. [Creating and Running a Shell Script](bash/intro/myscript.html)
+2. [Variables and Data Types](bash/intro/variables.html)
+3. [Maths and Arithmetic](bash/intro/maths.html)
+4. [Strings](bash/intro/strings.html)
+5. [Booleans and If Statements](bash/intro/booleans.html)
+6. [Arrays and Loops](bash/intro/arrays_loops.html)
+7. [Functions](bash/intro/functions.html)
+8. [Passing Arguments](bash/intro/passing_arguments.html)
+
+## Utilities
+1. [Unzip All Files](bash/utilities/unzip_all.html)
+2. [Timing a Script](bash/utilities/timing_a_script.html)
+3. [Startup Files](bash/utilities/startup_files.html)
+
+</font>

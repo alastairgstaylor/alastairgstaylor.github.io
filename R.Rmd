@@ -1,0 +1,87 @@
+---
+title: R
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        # number_sections: true
+        # toc: true
+        includes:
+            before_body: google_analytics.html
+---
+
+<font size="3">
+
+## Introduction to R
+1. [R and RStudio](R/intro/r_rstudio.html)
+2. [Comments, Variables and Data Types](R/intro/data_types.html)
+3. [Packages and Libraries](R/intro/packages.html)
+4. [Maths and Numbers](R/intro/maths.html)
+5. [Strings and Characters](R/intro/strings.html)
+6. [Vectors](R/intro/vectors.html)
+7. [Named Vectors and Lists (aka Dictionaries)](R/intro/named_vectors_lists.html)
+8. [Booleans and If Statements](R/intro/booleans.html)
+9. [Data Frames](R/intro/data_frames.html)
+10. [For and While Loops](R/intro/loops.html)
+11. [Functions](R/intro/functions.html)
+12. [Exception Handling](R/intro/exceptions.html)
+13. [Linting](R/intro/linting.html)
+14. [Python in R](R/intro/python_in_r.html)
+
+## Working with Data
+1. [Pre-Loaded Datasets](R/data/pre_loaded_datasets.html)
+2. [Create Unique Identifiers](R/data/create_unique_identifiers.html)
+3. [Data Stratification](R/data/stratification.html)
+    - [Data Classification Using Date or Time Information](R/data/classify_using_dates.html)
+4. [Filter by Number of Times a Values Appears](R/data/filter_by_appearances.html)
+5. [Descriptive and Summary Statistics](R/data/descriptive_summary_statistics.html)
+6. [Pivot Tables](R/data/pivot_tables.html)
+7. [Demographic Data Tables](R/data/demographic_tables.html)
+8. [Merging](R/data/merging.html)
+9. [File IO: Create, Export and Import Data](R/data/create_export_import.html)
+10. [Filling in Missing Data](R/data/filling_in_missing_data.html)
+11. [Working with JSON Files](R/data/working_with_json.html)
+
+## Graphs
+
+1. Using Base R
+    - [Symbols, Line Types and Colours](R/graphs/base/symbols_linetypes_colours.html)
+    - [Line Plots](R/graphs/base/lineplots.html)
+    - [Scatter Plots](R/graphs/base/scatterplots.html)
+    - [Bland-Altman Plots](R/graphs/base/bland_altman.html)
+    - Box Plots (Box-and-Whisker Plots):
+        - [Single Group](R/graphs/base/boxplots_single_group.html)
+        - [Multiple Groups](R/graphs/base/boxplots_multiple_groups.html)
+    - [Bee Swarm Plots](R/graphs/base/bee_swarm.html)
+    - Bar Plots:
+        - [Single Factor](R/graphs/base/barplots_single_factor.html)
+        - [Multiple Factors](R/graphs/base/barplots_multiple_factors.html)
+    - [Receiver Operating Characteristic (ROC) Curves](R/graphs/base/receiver_operating_characteristic.html)
+2. Using ggplot2
+    - [Cheat Sheet](R/graphs/ggplot2/cheat_sheet.html)
+    - [Line Plots](R/graphs/ggplot2/lineplots.html)
+    - [Scatter Plots](R/graphs/ggplot2/scatterplots.html)
+    - [Bland-Altman Plots](R/graphs/ggplot2/bland_altman.html)
+    - Box Plots (Box-and-Whisker Plots):
+        - [Single Group](R/graphs/ggplot2/boxplots_single_group.html)
+        - [Multiple Groups](R/graphs/ggplot2/boxplots_multiple_groups.html)
+    - Bar Plots:
+        - [Single Factor](R/graphs/ggplot2/barplots_single_factor.html)
+        - [Multiple Factors](R/graphs/ggplot2/barplots_multiple_factors.html)
+    - [Receiver Operating Characteristic (ROC) Curves](R/graphs/ggplot2/receiver_operating_characteristic.html)
+
+## Statistics
+1. [Descriptive Statistics](R/statistics/descriptive_statistics.html)
+2. [Diagnostic Accuracy Tutorial](R/statistics/tutorial.html) ([complete](R/statistics/tutorial_completescript.R), [empty](R/statistics/tutorial_emptyscript.R))
+3. [Principal Component Analysis](R/statistics/principal_component_analysis.html)
+4. Hypothesis Testing:
+    - [Kruskal-Wallis Rank Sum Test](R/statistics/hypothesis_testing/kruskal_wallis.html)
+    - [Friedman Rank Sum Test](R/statistics/hypothesis_testing/friedman.html)
+    - [Chi-Squared Tests](R/statistics/hypothesis_testing/chi_squared.html)
+5. Agreement (Accuracy & Precision):
+    - [Passing–Bablok Regression](R/statistics/agreement/passing_bablok.html)
+    - [Repeatability Coefficient](R/statistics/agreement/repeatability_coefficient.html)
+    - [Bland-Altman and Giavarina Analysis](R/statistics/agreement/bland_altman_giavarina.html)
+    - [Coefficient of Variation](R/statistics/agreement/coefficient_of_variation.html)
+
+</font>

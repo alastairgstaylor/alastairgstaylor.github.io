@@ -1,0 +1,246 @@
+---
+title: '<font size="5">Statistics in Python:</font><br>Intraclass Correlation Coefficient'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../../python.html)
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(out.width = "100%")
+knitr::opts_chunk$set(engine.path = "/usr/bin/python3.11")
+```
+
+In Python, the intraclass correlation coefficient (ICC) can be calculated using the `intraclass_corr()` function from the `pingouin` library. This function's [documentation](https://pingouin-stats.org/build/html/generated/pingouin.intraclass_corr.html) tells us that:
+
+> The intraclass correlation assesses the reliability of ratings by comparing the variability of different ratings of the same subject to the total variation across all ratings and all subjects
+
+...and [the Wikipedia page](https://en.wikipedia.org/wiki/Intraclass_correlation) says that:
+
+> The intraclass correlation coefficient (ICC) is a descriptive statistic that can be used when quantitative measurements are made on units that are organized into groups. It describes how strongly units in the same group resemble each other.
+
+Note also that an [*inter*class correlation coefficient](https://en.wikipedia.org/wiki/Interclass_correlation) is a thing that exists; it is similar but different.
+
+Setup
+=====
+As mentioned, the `pingouin` library will be used to calculate the ICC, and the `pandas` library will also be needed. These can be installed from the terminal with:
+
+```
+python3.11 -m pip install pingouin
+python3.11 -m pip install pandas
+```
+
+After this they can be imported into Python scripts with:
+
+```{python}
+import pingouin as pg
+import pandas as pd
+```
+
+Worked Example
+==============
+*This example comes from [the Real Statistics site](http://www.real-statistics.com/reliability/intraclass-correlation/), although it has also been included in Pingouin as a built-in example.*
+
+Let's imagine that there are four **judges** each tasting 8 different types of **wine** and rating them from **0 to 9**. The results of their assessments have been included in Pingouin, so there is a function to import this raw data directly:
+
+```{python}
+data = pg.read_dataset('icc')
+print(data)
+```
+
+**Pivotting** this data table will make it more readable, although it's actually more *useable* when it's in the original un-pivotted format (or 'long' format) so we won't assign the pivotted table to a new variable:
+
+```{python}
+print(pd.pivot_table(data, index='Judge', columns='Wine').T)
+```
+
+The above table matches [the one given in the original example](https://www.real-statistics.com/reliability/interrater-reliability/intraclass-correlation/), so we can be sure we're starting from the right place with this worked example.
+
+In order to use the `intraclass_corr()` function we need to give it four inputs:
+
+- `data` - the input dataframe in long format (ie un-pivotted)
+- `targets` - the name of the column in `data` that contains the names of the things being rated
+- `raters` - the name of the column in `data` that contains the names of the things *doing* the rating
+- `ratings` - the name of the column in `data` that contains the values of the ratings
+
+The first of these is a dataframe and the other three are strings (as they are column names). In our example, the things being rated are **Wines**, the raters are the **Judges** and the ratings are the **Scores**, so here's how to calculate the ICC:
+
+```{python}
+results = pg.intraclass_corr(data=data, targets='Wine', raters='Judge', ratings='Scores')
+
+# Pandas display options
+pd.set_option('display.max_columns', 8)
+pd.set_option('display.width', 200)
+# Show results
+print(results)
+```
+
+This output is very verbose! You get a whole table when you probably only want one number. Here's how to choose which of the six ICC values you want:
+
+ICC Types
+---------
+The different types of ICC models are detailed briefly on [the Wikipedia page](https://en.wikipedia.org/wiki/Intraclass_correlation#Calculation_in_software_packages), but here's a summary:
+
+- **ICC1**: each of the subjects has been measured by only a sub-set of the raters, and it is NOT the same sub-set of raters that measured each subject
+- **ICC2**: each of the subjects has been measured by only a sub-set of the raters, but it IS the same sub-set of raters that measured each subject
+- **ICC3**: each of the subjects has been measured by the entire population of raters (so we don't have to take inter-rater variability into account)
+- **ICC1k**, **ICC2k** and **ICC3k**: the reliability of the *k* raters when working as a group (whereas ICC1, ICC2 and ICC3 represent the reliability of the raters as individuals). These values will always be higher (in the example they are ~0.91 as opposed to the first three which are ~0.73) because multiple raters working together will always give a statistically more reliable result.
+
+For this example the Real Statistics page uses ICC2 (**single random raters**) which is correct for this example: a group of four judges does not represent the entire population of people who could rate wine, each judge tasted all 8 wines and we want to know the reliability of the raters as individuals:
+
+```{python}
+results = results.set_index('Description')
+icc = results.loc['Single random raters', 'ICC']
+
+print(icc.round(3))
+```
+
+This is the same value as in the original example.
+
+Confidence Interval
+-------------------
+The function also gives the 95% confidence interval:
+
+```{python}
+lower_ci = results.loc['Single random raters', 'CI95%'][0]
+upper_ci = results.loc['Single random raters', 'CI95%'][1]
+
+print(f'ICC = {icc:.3f}, 95% CI [{lower_ci}, {upper_ci}]')
+```
+
+How the Function Works
+----------------------
+The source code for this function might be useful if you want to take a look at how exactly it works. That can be found over [here](https://github.com/raphaelvallat/pingouin/blob/dcfdc82bbc7f1ba5991b80717a5ca156617443e8/pingouin/reliability.py#L158).
+
+Interpretation
+==============
+Again we can look at the Wikipedia page for help, as it gives this guide for interpreting the ICC (re-produced from Cicchetti<sup>1</sup>):
+
+| Inter-rater agreement | Intraclass correlation |
+|-----------------------|------------------------|
+| Poor                  | Less than 0.40         |
+| Fair                  | Between 0.40 and 0.59  |
+| Good                  | Between 0.60 and 0.74  |
+| Excellent             | Between 0.75 and 1.00  |
+
+...plus this alternative one from Koo and Li<sup>2</sup>:
+
+| Inter-rater agreement | Intraclass correlation |
+|-----------------------|------------------------|
+| Poor                  | Less than 0.50         |
+| Moderate              | Between 0.50 and 0.75  |
+| Good                  | Between 0.75 and 0.90  |
+| Excellent             | Between 0.90 and 1.00  |
+
+1. Cicchetti D. Guidelines, criteria, and rules of thumb for evaluating normed and standardized assessment instruments in psychology. Psychological Assessment. 1994;6(4):284-290
+2. Koo T, Li M. A Guideline of Selecting and Reporting Intraclass Correlation Coefficients for Reliability Research. Journal of Chiropractic Medicine. 2016;15(2):155-163
+
+These can be coded up into functions as follows:
+
+```{python}
+def interpret_icc_cicchetti(icc):
+    """Interpret the inter-rater agreement."""
+    if icc < 0.4:
+        return 'poor'
+    elif icc < 0.60:
+        return 'fair'
+    elif icc < 0.75:
+        return 'good'
+    elif icc <= 1:
+        return 'excellent'
+    else:
+        raise ValueError(f'Invalid value for the ICC: {icc}')
+
+
+def interpret_icc_koo_li(icc):
+    """Interpret the inter-rater agreement."""
+    if icc < 0.5:
+        return 'poor'
+    elif icc < 0.75:
+        return 'moderate'
+    elif icc < 0.9:
+        return 'good'
+    elif icc <= 1:
+        return 'excellent'
+    else:
+        raise ValueError(f'Invalid value for the ICC: {icc}')
+```
+
+Our result of 0.728 can now be interpreted automatically:
+
+```{python}
+icc = results.loc['Single random raters', 'ICC']
+agreement = interpret_icc_cicchetti(icc)
+
+print(f"An inter-rater agreement of {icc.round(3)} is {agreement}")
+```
+
+```{python}
+icc = results.loc['Single random raters', 'ICC']
+agreement = interpret_icc_koo_li(icc)
+
+print(f"An inter-rater agreement of {icc.round(3)} is {agreement}")
+```
+
+Variations
+==========
+
+Subsets
+-------
+If you are only interested in the agreement amongst a subset of the raters you can filter the dataset accordingly. Here's the agreement between Judges A and B:
+
+```{python}
+data = data[data['Judge'].isin(['A', 'B'])]
+results = pg.intraclass_corr(data, 'Wine', 'Judge', 'Scores')
+results = results.set_index('Type')
+icc = results.loc['ICC1', 'ICC']
+
+print(icc.round(3))
+```
+
+Wide-Format
+-----------
+Often you will have raw data that is in **wide format**:
+
+```{python}
+dct = {
+    'Judge A': [1, 1, 3, 6, 6, 7, 8, 9],
+    'Judge B': [2, 3, 8, 4, 5, 5, 7, 9],
+    'Judge C': [0, 3, 1, 3, 5, 6, 7, 9],
+    'Judge D': [1, 2, 4, 3, 6, 2, 9, 8],
+}
+df = pd.DataFrame(dct)
+
+print(df)
+```
+
+It will need to be converted into **long format** before `intraclass_corr()` can be used. This can be done by creating a new column that will form the *targets* and then converting to long-format with the `melt()` function from Pandas:
+
+```{python}
+df['index'] = df.index
+df = pd.melt(df, id_vars=['index'], value_vars=list(df)[:-1])
+
+print(df)
+```
+
+The ICC can then be calculated as per normal:
+
+```{python}
+results = pg.intraclass_corr(df, 'index', 'variable', 'value')
+results = results.set_index('Description')
+icc = results.loc['Single random raters', 'ICC']
+
+print(icc.round(3))
+```
+
+[⇦ Back](../../../python.html)
+
+</font>

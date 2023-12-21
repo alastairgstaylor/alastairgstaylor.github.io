@@ -1,0 +1,19 @@
+---
+title: stackloss
+subtitle: Brownlee's Stack Loss Plant Data
+output:
+    html_document:
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+#### *A pre-loaded example dataset in R*
+Main page: https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/stackloss
+
+```{r}
+stackloss
+stack.x
+stack.loss
+require(stats)
+summary(lm.stack <- lm(stack.loss ~ stack.x))
+```

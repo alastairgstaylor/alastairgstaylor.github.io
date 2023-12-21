@@ -1,0 +1,145 @@
+---
+title: '<font size="5">Introduction to Bash and Z Shell:</font><br>Maths and Arithmetic'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../google_analytics.html
+---
+
+<font size="3">
+
+> This page has been tested on macOS Catalina and Ubuntu 18.04 & 20.04
+
+[⇦ Back](../../bash.html)
+
+Integer Arithmetic
+==================
+
+expr
+----
+
+All the usual mathematical operations are possible in Bash/Zsh using the `expr` (*expression*) command:
+
+```{bash, comment=NA}
+# Addition
+expr 1 + 2
+# Subtraction
+expr 1 - 2
+# Multiplication
+expr 1 \* 2
+# Division
+expr 2 / 1
+```
+
+Multiplication needs to have a backslash before the `*`. This is because the asterisk on it's own is a **wildcard** in Bash/Zsh, ie it means 'everything' as opposed to 'multiplication'. The backslash tells Bash/Zsh that you want to **escape** that behaviour and treat the asterisk as a multiplication symbol.
+
+Note also that division poses a problem because fractions aren't something that can be immediately handled:
+
+```{bash, eval=FALSE, comment=NA}
+# This causes an error
+expr 1 / 2
+```
+
+The output of a calculation can be assigned to a variable as per normal:
+
+```{bash, comment=NA}
+answer=$(expr 7 + 11)
+echo $answer
+echo $(expr $answer + 6)
+new_answer=$(expr $answer + 18)
+echo $new_answer
+```
+
+let
+---
+
+Another option is to use the `let` command and the 'arithmetic-assignment' double symbols ("+=", "-=", "\=" and "\*=":
+
+```{bash, comment=NA}
+answer=11
+# Addition
+let answer+=4
+echo $answer
+# Subtraction
+let answer-=3
+echo $answer
+# Multiplication
+let answer\*=2
+echo $answer
+# Division
+let answer/=3
+echo $answer
+```
+
+Arithmetic Expansion
+--------------------
+Next, you can use double brackets to perform **arithmetic expansion**:
+
+```{bash, comment=NA}
+answer=6
+# Addition
+echo $((answer + 2))
+# Subtraction
+echo $((answer - 2))
+# Multiplication
+echo $((answer * 2))  # Note that we do not need the escaping backslash!
+# Division
+echo $((answer / 2))
+```
+
+Equivalently, you can use single square brackets:
+
+```{bash, comment=NA}
+answer=6
+# Addition
+echo $[answer + 2]
+# Subtraction
+echo $[answer - 2]
+# Multiplication
+echo $[answer * 2]  # Note that we do not need the escaping backslash!
+# Division
+echo $[answer / 2]
+```
+
+This method also lets you do C-style incrementation
+
+```{bash, comment=NA}
+answer=6
+# Print to console then add 1
+echo $[answer++]
+echo $answer
+# Add one then print to console
+echo $[++answer]
+```
+
+Floating-Point Arithmetic
+=========================
+You can't do maths with decimal fractions in Bash/Zsh! At least not out-of-the-box. You have to use a tool called `bc`.
+
+Pipe to Standard Out
+--------------------
+The first option is to write the calculation as a string, echo it to the console and then send it to the `bc` programme. This sending is done using a pipe symbol (`|`) which is why it's known as 'piping'. Piping is only possible when you have sent something to the console (more precisely, you have to send it to the 'standard output', or STDOUT, which just so happens to be the console) which is why we first need the `echo` command.
+
+```{bash, comment=NA}
+# Write as a string, use echo to send to stdout, pipe stdout to bc
+echo "5.12 + 12.1 - 16.2 * 2.7 / 1.4" | bc
+```
+
+Once again, we didn't need to use a backslash before the multiplication symbol.
+
+Triple Arrow
+------------
+We can also use a triple arrow:
+
+```{bash, comment=NA}
+# Write as a string, send to bc
+bc <<< "5.12 + 12.1 - 16.2 * 2.7 / 1.4"
+```
+
+[⇦ Back](../../bash.html)
+
+</font>

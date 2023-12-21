@@ -1,0 +1,73 @@
+---
+title: '<font size="5">`scikit-learn` Toy Datasets in Python:</font><br>Iris plants dataset'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(out.width = "100%")
+```
+
+For more info, see here:  
+[https://scikit-learn.org/stable/datasets/toy_dataset.html#iris-plants-dataset](https://scikit-learn.org/stable/datasets/toy_dataset.html#iris-plants-dataset){target="_blank"}
+
+The **iris plants dataset** contains measurements of the features of flowers:
+
+- 3 species of Iris were analysed (3 classes)
+- 150 flowers were analysed (150 instances)
+    + Specifically, 50 specimens of each species were analysed
+- 4 measurements were taken from each flower (4 attributes)
+
+The dataset can be loaded using `load_iris()` or `load_iris(as_frame=True)`. Both return a 'Bunch' object which can be indexed as if it were a dictionary with the following being the most important keys:
+
+| Key | Value |
+|-----|-------------------------------------------------------------|
+| `DESCR` | Description of the dataset |
+| `filename` | Location of the CSV file containing the data being imported |
+| `feature_names` | Names of the 4 attributes (the measurements taken) |
+| `data` | The 150 data points, formatted as a 150x4 array by default or a 150x4 pandas data frame if `as_frame=True` was used |
+| `target_names` | Names of the classes (ie the names of the 3 species of Iris) |
+| `target` | Which class each data point is in (ie which species of Iris each flower was): 0, 1 or 2. These correspond to the indexes of the names in `target_names`. This is an array of length 150 by default, or a pandas series if `as_frame=True` was used. |
+
+Example usage:
+
+```{python}
+from sklearn import datasets
+from matplotlib import pyplot as plt
+import itertools
+
+# Load the dataset
+dataset = datasets.load_iris(as_frame=True)
+
+# Separate out the data
+X = dataset['data']
+y = dataset['target']
+
+# Translate the target
+y = y.apply(lambda x: dataset['target_names'][x])
+
+# Plot
+fig, ax = plt.subplots(3, 2, figsize=(8, 10))
+ax = ax.flatten()
+fig.suptitle('Iris plants dataset')
+for i, combination in enumerate(itertools.combinations(list(X), 2)):
+    col1, col2 = combination
+    for species in dataset['target_names']:
+        df = X[y == species]
+        ax[i].scatter(df[col1], df[col2], label=species)
+    ax[i].set_xlabel(col1)
+    ax[i].set_ylabel(col2)
+    ax[i].legend()
+plt.tight_layout()
+plt.show()
+```
+
+</font>

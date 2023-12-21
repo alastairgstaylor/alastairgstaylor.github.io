@@ -1,0 +1,501 @@
+---
+title: '<font size="5">Statistics in Python:</font><br>Unpaired Two-Sample <i>t</i>-Tests'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../../python.html)
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(out.width = "75%")
+knitr::opts_chunk$set(engine.path = "/usr/bin/python3.11")
+```
+
+The **unpaired two-sample *t*-test** is one of [Student's *t*-tests](https://en.wikipedia.org/wiki/Student%27s_t-test) that can be used to compare the means of two groups of numerical data. These groups need to be *independent* of each other - a sample in one group must not be *paired* with or affect the value of any sample in the other group.
+
+```{python, echo = FALSE, results = "hide"}
+from sklearn import datasets
+from matplotlib import pyplot as plt
+from matplotlib import lines
+import seaborn as sns
+
+# Load the dataset
+breast_cancer = datasets.load_breast_cancer(as_frame=True)
+# Extract the feature and target data together
+df = breast_cancer['frame']
+# Clean the raw data
+df['target'] = df['target'].apply(lambda x: breast_cancer['target_names'][x])
+
+# Plot
+ax = plt.axes()
+sns.boxplot(
+   df, x='target', y='mean smoothness', color='lightgrey', whis=[0, 100],
+   showmeans=True, meanline=True, meanprops={'color': 'black'}
+)
+sns.stripplot(
+   df, x='target', y='mean smoothness',
+   color='lightgrey', edgecolor='black', linewidth=1
+)
+title = """Are these two groups' means significantly
+different from one another?"""
+ax.set_title(title)
+ax.set_ylabel('')
+_ = ax.set_ylim([0, 0.17])
+ax.set_xlabel('')
+ax.set_xticklabels(['Group 0', 'Group 1'])
+handles = [lines.Line2D([0], [0], color='k', linewidth=1, linestyle='--')]
+ax.legend(handles, ['Group Means'], loc='lower left')
+plt.show()
+```
+
+In the above plot the black dashed lines represent the mean values of two groups of independent data. Is the mean of Group 0 significantly different from that of Group 1?
+
+Python Packages
+===============
+The code on this page uses the NumPy, SciPy, scikit-learn, Matplotlib and Seaborn packages. These can be installed from the terminal:
+
+```{bash, eval = FALSE}
+# `python3.11` corresponds to the version of Python you have installed and are using
+$ python3.11 -m pip install numpy
+$ python3.11 -m pip install scipy
+$ python3.11 -m pip install sklearn
+$ python3.11 -m pip install matplotlib
+$ python3.11 -m pip install seaborn
+```
+
+Once finished, import these packages into your Python script as follows:
+
+```{python}
+import numpy as np
+from scipy import stats as st
+from sklearn import datasets
+from matplotlib import pyplot as plt
+from matplotlib import lines
+import seaborn as sns
+```
+
+Example Data
+============
+This page will use the Breast Cancer Wisconsin dataset, a toy dataset from scikit-learn.
+
+- For this dataset's **description**, see [here](https://scikit-learn.org/stable/datasets/toy_dataset.html#breast-cancer-wisconsin-diagnostic-dataset)
+- For this dataset's **documentation**, see [here](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html#)
+- For an **example**, see [here](../../data/sklearn_datasets/breast_cancer.html)
+
+```{python}
+# Load the dataset
+breast_cancer = datasets.load_breast_cancer(as_frame=True)
+# Extract the feature and target data together
+df = breast_cancer['frame']
+# Clean the raw data
+df['target'] = df['target'].apply(lambda x: breast_cancer['target_names'][x])
+```
+
+This dataset contains numerical results obtained from 569 samples of breast cancer tumours that were either benign or malignant. For this example we are only going to use the `mean smoothness` values of the tumours (the mean local variations in radius, which we will simply call `smoothness`) and the `target` variable (the disease classification):
+
+```{python}
+# Extract the data
+cols = ['mean smoothness', 'target']
+df = df[cols]
+# Rename
+df = df.rename(columns={'mean smoothness': 'smoothness'})
+
+print(df.tail())
+```
+
+Re-plotting the graph from above with the proper labels added in:
+
+```{python, eval = FALSE}
+# Plot
+ax = plt.axes()
+sns.boxplot(
+   df, x='target', y='smoothness', color='lightgrey', whis=[0, 100],
+   showmeans=True, meanline=True, meanprops={'color': 'black'}
+)
+sns.stripplot(
+   df, x='target', y='smoothness',
+   color='lightgrey', edgecolor='black', linewidth=1
+)
+ax.set_title('Breast Cancer Wisconsin Dataset')
+ax.set_ylabel('Tumour Smoothness')
+ax.set_ylim([0, 0.17])
+ax.set_xlabel('')
+ax.set_xticklabels(['Malignant', 'Benign'])
+handles = [lines.Line2D([0], [0], color='k', linewidth=1, linestyle='--')]
+ax.legend(handles, ['Group Means'], loc='lower left')
+plt.show()
+```
+
+```{python, echo = FALSE, results = "hide"}
+# Plot
+ax = plt.axes()
+sns.boxplot(
+   df, x='target', y='smoothness', color='lightgrey', whis=[0, 100],
+   showmeans=True, meanline=True, meanprops={'color': 'black'}
+)
+sns.stripplot(
+   df, x='target', y='smoothness',
+   color='lightgrey', edgecolor='black', linewidth=1
+)
+ax.set_title('Breast Cancer Wisconsin Dataset')
+ax.set_ylabel('Tumour Smoothness')
+ax.set_ylim([0, 0.17])
+ax.set_xlabel('')
+ax.set_xticklabels(['Malignant', 'Benign'])
+handles = [lines.Line2D([0], [0], color='k', linewidth=1, linestyle='--')]
+ax.legend(handles, ['Group Means'], loc='lower left')
+plt.show()
+```
+
+Set a Research Question
+=======================
+Looking at the plotted data above leads to a question: is the average smoothness of a tumour different if it is malignant as opposed to if it is benign? If this were to be true it might be medically useful, and it may even help in the early detection of cancer. Wording this as a **research question** gives us:
+
+> Are the smoothness values of malignant tumours the same as those of benign tumours?
+
+There are a number of things that this question does not specify: are we interested in comparing the means, medians or distributions of the two groups? Are we interested in *any* difference between them or specifically if one group is larger than the other? Or are we interested in if they are *equivalent* (which is different to them being the *same*)? We need to take a closer look at the data before we can fully formulate our research question as a *hypothesis*, but this can be considered a first draft of that hypothesis.
+
+Choose a Statistical Test
+=========================
+A number of questions need to be addressed before we can choose a test:
+
+Parametric vs Non-Parametric
+----------------------------
+First, we need to decide if we should use **parametric** or **non-parametric** statistics to address this research question. Parametric statistics are based on assumptions about the data's distribution while non-parametric statistics are not. You should choose parametric statistics if:
+
+- Your data is normally distributed, or
+- Your data is not normally distributed but the sample size is large. Some rules-of-thumb as to what can be considered 'large' are:
+    + $n > 20$ if you only have one group
+    + $n > 15$ in each group if you have 2 to 9 groups
+    + $n > 20$ in each group if you have 10 to 12 groups
+- The data should not be skewed. In other words, the *mean* should be representative of the central tendency and not be much different from the *median*.
+    + When doing parametric statistics use the mean and when doing non-parametric statistics use the median
+- There should not be an influential number of outliers. While this is similar to the previous point about the data not being skewed bear in mind that it's possible to have outliers both above and below the mean of the data, essentially cancelling out the skewness. Hence why a 'lack of skewness' and a 'lack of outliers' both need to be checked for.
+- Parametric tests usually have more statistical power than non-parametric tests and so are more likely to detect a significant difference when one truly exists. If there is a need to increase the power of a test then they can be considered over non-parametric tests.
+
+Let's check if we have sufficiently large groups:
+
+```{python}
+# Sample sizes
+n = df['target'].value_counts()
+
+print(n)
+```
+
+For the malignant group we have $n = 212$ and for the benign group it is $n = 357$, so in both cases we have $n > 15$. Eye-balling the boxplots shows that the groups are not particularly skewed (the mean and median lines are close together) and that there are not too many outliers. We could, if we wanted to be more rigorous, actually test for normality (see [here](../distributions/tests_for_normality.html)), skewness and outliers but for the purpose of this example we already have enough information to conclude that a **parametric** test is appropriate.
+
+Homogeneity of Variance
+-----------------------
+The *spread* of the data should be roughly equal for both groups. Despite being called homogeneity of *variance* you can actually look at either variance *or* standard deviation to assess this. This is because the ratio of variances is - by definition - the square of the ratio of standard deviations and the square is a *monotonic function*, so order is preserved (for positive numbers).
+
+With that said, here are some rules-of-thumb as to what standard deviations can be considered 'roughly equal':
+
+- $0.5 < \frac{s_0}{s_1} < 2$ (source: [Wikipedia](https://en.wikipedia.org/wiki/Student%27s_t-test#Equal_or_unequal_sample_sizes,_similar_variances_(1/2_%3C_sX1/sX2_%3C_2)))
+- $0.9 < \frac{s_0}{s_1} < 1.1$ (source: Codecademy)
+
+where $s_0$, $s_1$ are the sample standard deviations for the two groups. Let's check our data:
+
+```{python}
+# Homogeneity of variance (using sample standard deviations)
+s = df.groupby('target')['smoothness'].std(ddof=1)
+ratio = s[0] / s[1]
+
+print(f'Ratio of standard deviations: {ratio:.2f}')
+```
+
+This is between 0.9 and 1.1, so we can conclude that the variances are 'equal enough'.
+
+Use the Flowchart
+-----------------
+We have enough insight into our research question (our 'draft hypothesis') and our data to be able to now follow a statistical test selection process:
+
+- Our dependent variable - tumour smoothness - is **continuous** because it is made up of measurements that are numbers as opposed to discrete categories or ranks
+- Our independent variables - tumour classification - is **categorical** (specifically, it is *nominal* and, more specifically, it is *binary*)
+- We have **two groups** for the independent variable: malignant and benign
+- As discussed above, we want to do a **parametric** test
+- Our measurements are **independent** of each other: the smoothness of one tumour does not affect the smoothness of another tumour
+
+Looking at the flowchart below tells us that we should thus be using the unpaired two-sample *t*-test (or [Welch's *t*-test](https://en.wikipedia.org/wiki/Welch%27s_t-test), but that is used when the variances are unequal and we have established that they are close enough to be considered equal):
+
+```{r, echo=FALSE}
+# install.packages("DiagrammeR", repos = "http://cran.us.r-project.org")
+library(DiagrammeR)
+# fillcolor='#c9daf8'
+# fillcolor='#d9ead3'
+
+DiagrammeR::grViz(
+    "digraph statistical_tests {
+        rankdir='LR'
+
+        node [fontname=Helvetica, shape=box, style=filled, fillcolor=white]
+        start [label='Identify the\ndependent/outcome\nvariable(s) (DVs) and\nindependent/explanatory\nvariable(s) (IVs)', fillcolor='#ea9999']
+            dependent [label='Data type of\nthe DV?', fillcolor='#c9daf8']
+                sc_datatypes [label='Data type of\nthe IV?', fillcolor='#c9daf8']
+                    sc_true [label='True independent\nvariable?']
+                        yes_number [label='Number of\ngroups/samples\nfor the IV?']
+                            one_choose [label='Choose a fit']
+                                'Simple Linear\nRegression' [style=rounded]
+                                'Quadratic\nRegression' [style=rounded]
+                            'Multiple Linear\nRegression' [style=rounded]
+                        no_parametric [label='Parametric?']
+                            'Pearson\ncorrelation\ncoefficient' [style=rounded]
+                            'Spearmans rank\ncorrelation\ncoefficient' [style=rounded, label=<Spearman&rsquo;s rank<BR/>correlation<BR/>coefficient>]
+                    none_parametric [label='Parametric?']
+                        'One-sample t-test' [style=rounded, label=<One-sample <I>t</I>-test>]
+                    cd_number [label='Number of\ngroups/samples\nfor the IV?', fillcolor='#c9daf8']
+                        two_parametric [label='Parametric?', fillcolor='#c9daf8']
+                            true_independent [label='Independent\ngroups/sample?', fillcolor='#c9daf8']
+                                'Unpaired\ntwo-sample\nt-test' [fillcolor='#d9ead3', label=<Unpaired<BR/>two-sample<BR/><I>t</I>-test or<BR/>Welch&apos;s <I>t</I>-test>]
+                                'Paired\ntwo-sample\nt-test' [style=rounded, label=<Paired<BR/>two-sample<BR/><I>t</I>-test>]
+                            false_independent [label='Independent\ngroups/sample?']
+                                'Mann-Whitney\nU test' [style=rounded, label=<Mann-Whitney<BR/> <I>U </I>test>]
+                                'Wilcoxon\nsigned-rank test' [style=rounded]
+                        more_parametric [label='Parametric?']
+                            'ANOVA' [style=rounded]
+                                'Tukeys Range Test' [style=rounded, label=<Tukey&rsquo;s range<BR/>test>]
+                            false_independent2 [label='Independent\ngroups/sample?']
+                                'Kruskal-Wallis\none-way ANOVA' [style=rounded]
+                                'Friedman\ntwo-way ANOVA' [style=rounded]
+                cd_datatype [label='Type of\ncategorical\ndata?']
+                    binary_datatype [label='Data type of\nthe IV?']
+                        'One-sample Z-test' [style=rounded, label=<One-sample <I>Z</I>-test>]
+                        'Two-sample Z-test' [style=rounded, label=<Two-sample <I>Z</I>-test>]
+                        'χ² test for trend' [style=rounded]
+                    ordinal_datatype [label='Data type of\nthe IV?']
+                        'χ² test for trend' [style=rounded]
+                    nominal_datatype [label='Data type of\nthe IV?']
+                        none_additional [label='Additional DV?']
+                            'χ² goodness-of-fit test' [style=rounded]
+                            'χ² independence test' [style=rounded]
+                        'χ² homogeneity test' [style=rounded]
+
+        {rank=same; start -> dependent}
+        dependent -> sc_datatypes [label='Scale/\nContinuous']
+            sc_datatypes -> sc_true [label='Scale/\nContinuous']
+                sc_true -> yes_number [label='Yes\n(regression \nanalysis)']
+                    yes_number -> one_choose [label='One']
+                        one_choose -> 'Simple Linear\nRegression'
+                        one_choose -> 'Quadratic\nRegression'
+                    yes_number -> 'Multiple Linear\nRegression' [label='More']
+                sc_true -> no_parametric [label='No\n(correlation \nanalysis)']
+                    no_parametric -> 'Pearson\ncorrelation\ncoefficient' [label='Yes']
+                    no_parametric -> 'Spearmans rank\ncorrelation\ncoefficient' [label='No']
+            sc_datatypes -> none_parametric [label='None\n(no IV)']
+                none_parametric -> 'One-sample t-test' [label='Yes']
+            sc_datatypes -> cd_number [label='Categorical/\nDiscrete']
+                cd_number -> two_parametric [label=Two]
+                    two_parametric -> true_independent [label=Yes]
+                        true_independent -> 'Unpaired\ntwo-sample\nt-test' [label=Yes]
+                        true_independent -> 'Paired\ntwo-sample\nt-test' [label=No]
+                    two_parametric -> false_independent [label=No]
+                        false_independent -> 'Mann-Whitney\nU test' [label=Yes]
+                        false_independent -> 'Wilcoxon\nsigned-rank test' [label=No]
+                cd_number -> more_parametric [label=More]
+                    more_parametric -> 'ANOVA' [label=Yes]
+                        'ANOVA' -> 'Tukeys Range Test' [label='If signif.']
+                    more_parametric -> false_independent2 [label=No]
+                        false_independent2 -> 'Kruskal-Wallis\none-way ANOVA' [label=Yes]
+                        false_independent2 -> 'Friedman\ntwo-way ANOVA' [label=No]
+        dependent -> cd_datatype [label='Categorical/\nDiscrete']
+            cd_datatype -> binary_datatype [label='Binary\n(nominal)']
+                binary_datatype -> 'One-sample Z-test' [label='None\n(no IV)']
+                binary_datatype -> 'Two-sample Z-test' [label='Binary\n(nominal)']
+                binary_datatype -> 'χ² test for trend' [label=Ordinal]
+            cd_datatype -> ordinal_datatype [label='Ordinal']
+                ordinal_datatype -> 'χ² test for trend' [label='Binary\n(nominal)']
+            cd_datatype -> nominal_datatype [label='Nominal\n(incl binary)']
+                nominal_datatype -> none_additional [label='None\n(no IV)']
+                    none_additional -> 'χ² goodness-of-fit test' [label=No]
+                    none_additional -> 'χ² independence test' [label=Yes]
+                nominal_datatype -> 'χ² homogeneity test' [label=Nominal]
+
+    labelloc='t';
+    label='Flowchart for Choosing a Statistical Test';
+    fontsize=30;
+    }",
+    height=650,
+    width=1000
+)
+```
+
+Formalise the Hypothesis
+========================
+We can now formulate the research question properly as a *null hypothesis* with a corresponding *alternate hypothesis*:
+
+- $H_0:$ the true mean smoothness value is the same for both malignant and benign tumours
+- $H_1:$ the true mean smoothness value is **not** the same for both malignant and benign tumours
+
+More mathematically:
+
+- $H_0: \mu_0 = \mu_1$
+- $H_1: \mu_0 \neq \mu_1$
+
+where $\mu_0$, $\mu_1$ are the true means - of *all* tumours in the population, not just in the sample - for the two groups. Notice that this is a **two-tailed** test: we're interested in finding *any* difference if one exists, not just a specific difference ($\mu_0 > \mu_1$ or $\mu_0 < \mu_1$). Note also that if our research question had instead been "are the true mean smoothness values *equivalent*?" or "are the true mean smoothness values the same to within a certain *tolerance*?" then the hypotheses above would not be the correct formulations. Examples that have research questions like these are over [here](tost_unpaired.html).
+
+Descriptive Statistics
+======================
+We've already looked at the sample sizes, the standard deviations and the homogeneity of variance but we can also look at the following to get a better understanding of our data:
+
+Sample means ($\bar{x}_0$, $\bar{x}_1$):
+
+```{python}
+# Sample means
+x_bar = df.groupby('target')['smoothness'].mean()
+
+print(x_bar)
+```
+
+Difference between the sample means ($\bar{x}_0 - \bar{x}_1$):
+
+```{python}
+# Difference between the sample means
+diff_btwn_means = x_bar.diff()
+diff_btwn_means = diff_btwn_means.dropna()[0]
+
+print(f'Difference between the means: {diff_btwn_means:.4f}')
+```
+
+Pooled estimate of the common standard deviation of the two samples ($s_p$) for equal or unequal sample sizes and similar variances:
+
+```{python}
+# Degrees of freedom
+dof = n[0] + n[1] - 2
+# Pooled standard deviation
+s_p = np.sqrt(((n[0] - 1) * s[0]**2 + (n[1] - 1) * s[1]**2) / dof)
+
+print(f'Pooled standard deviation: {s_p:.4f}')
+```
+
+Standard error (SE) of the difference between the sample means ($SE \left( \bar{x}_0 - \bar{x}_1 \right)$):
+
+```{python}
+# Standard error (SE) of the difference between sample means
+se = s_p * np.sqrt((1 / n[0]) + (1 / n[1]))
+
+print(f'Standard error (SE) of the difference between sample means: {se:.5f}')
+```
+
+Confidence interval (CI) for the difference between the sample means:
+
+```{python}
+# Confidence interval
+upper = diff_btwn_means + 1.96 * se
+lower = diff_btwn_means - 1.96 * se
+
+print(f'Difference between means: {diff_btwn_means:.3f} ({lower:.3f} to {upper:.3f})')
+```
+
+These equations can be found on [Wikipedia](https://en.wikipedia.org/wiki/Student%27s_t-test#Equal_or_unequal_sample_sizes,_similar_variances_(1/2_%3C_sX1/sX2_%3C_2)), Boston University's [site](https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_confidence_intervals/bs704_confidence_intervals5.html) and [Statology](https://www.statology.org/confidence-interval-difference-between-means/).
+
+For the record, the values of 1.96 used in the final equations to get the confidence interval come from the fact that 95% of values lie within about this number of standard deviations of the mean (see [here](https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule)). The exact number can be calculated as follows:
+
+```{python}
+# Confidence level
+C = 0.95  # 95%
+# Significance level, α
+alpha = 1 - C
+# Number of tails
+tails = 2
+# Quantile (the cumulative probability)
+q = 1 - (alpha / tails)
+# Critical z-score, calculated using the percent-point function (aka the
+# quantile function) of the normal distribution
+z_star = st.norm.ppf(q)
+
+print(f'95% of values lie within {z_star:.5f} standard deviations of the mean')
+```
+
+Unpaired Two-Sample *t*-Test
+============================
+After all that hard work above we are only one step away from calculating the *t*-statistic:
+
+```{python}
+# t-statistic
+t_statistic = diff_btwn_means / se
+
+print(f't = {t_statistic:.3f}')
+```
+
+...and the corresponding *p*-value:
+
+```{python}
+# p-value
+p_value = (1 - st.t.cdf(t_statistic, dof)) * 2
+
+print(f'p = {p_value:.3f}')
+```
+
+Note that this *p*-value is so small that it is being shown as 0, but this is just a data representation error.
+
+A better (and much simpler) option is to use SciPy's `ttest_ind()` function:
+
+```{python}
+# Separate out the samples
+malignant = df.groupby('target').get_group('malignant')
+benign = df.groupby('target').get_group('benign')
+# Unpaired two-sample Student's t-test
+t_statistic, p_value = st.ttest_ind(malignant['smoothness'], benign['smoothness'])
+
+print(f'Two-sample t-test: s = {t_statistic:5.3f}, p = {p_value:.2e}')
+```
+
+Interpreting the Result
+-----------------------
+This *p*-value is (very!) small - much less than 0.05 - which means that we can reject $H_0$ and conclude that there is a statistically significant difference between the smoothness of the two tumour types (*p* < 0.05) with the mean smoothness value being 0.0104 units, 95% CI [0.0082, 0.0127], greater on average in malignant tumours than in benign tumours.
+
+Often, you will see this type of result reported using asterisks to indicate the significance level (α) associated with it. Additionally, if the *p*-value is very small it's usually just reported as "<0.001" rather than as an exact value. Here are functions to add in this formatting:
+
+```{python}
+def get_significance(p):
+    """Get the significance of a p-values as a string of stars."""
+    if p <= 0.001:
+        return '***'
+    elif p <= 0.01:
+        return '**'
+    elif p <= 0.05:
+        return '*'
+    elif p <= 0.1:
+        return '.'
+    else:
+        return ''
+
+
+def round_p_value(p):
+    """Round a small p-value so that it is human-readable."""
+    if p < 0.001:
+        return '<0.001'
+    else:
+        return f'{p:5.3}'
+
+
+p_rounded = round_p_value(p_value)
+significance = get_significance(p_value)
+
+print(f'The p-value is {p_rounded} ({significance})')
+```
+
+Adding Significance Bars to Boxplots
+------------------------------------
+If you're interested in adding significance bars to boxplots after having used the unpaired two-sample *t*-test to find a significant difference, look over [here](../../graphs/ax_based/boxplots_significance.html).
+
+Welch's *t*-test
+================
+As already mentioned, the standard unpaired two-sample Student's *t*-test makes the assumption that the variances of your two groups are equal. This is why we checked that the two standard deviations are 'equal enough'. If they are **not** sufficiently similar in value we can perform [Welch's *t*-test](https://en.wikipedia.org/wiki/Welch%27s_t-test) which is like Student's *t*-test except it does not make this equal variance assumption.
+
+The `ttest_ind()` function has a parameter `equal_var` which allows you to choose if this assumption is made or not, and hence which test is performed. It is set to `True` by default and hence a Student's *t*-test is run, but the ability to set `equal_var=False` means you have the option to perform Welch's *t*-test if it is more suitable.
+
+Two One-Sided *t*-Tests
+=======================
+Another type of test is the "two one-sided *t*-test" (TOST) which involves, as the name suggests, performing two one-sided unpaired two-sample *t*-tests. While this *is* a hypothesis test, its purpose is to test equivalence: it asks "do the means of two populations differ by less than a certain amount?" as opposed to "are the means the same?". For this reason it is discussed on [its own page](tost_unpaired.html) in the 'agreement' section.
+
+[⇦ Back](../../../python.html)
+
+</font>

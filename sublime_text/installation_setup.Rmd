@@ -1,0 +1,521 @@
+---
+title: '<font size="5">Sublime Text 4</font><br>Installation and Setup Guide'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        # number_sections: true
+        # toc: true
+        includes:
+            before_body: ../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../sublime_text.html)
+
+<!-- <table style="table-layout: fixed; width: 100%;">
+    <tr>
+        <td valign="top"; style="width:33%;">
+            <h3>macOS</h3>
+            <ul>
+                <li>Sierra</li>
+            </ul>
+        </td>
+        <td valign="top"; style="width:33%;">
+            <h3>Windows</h3>
+            <ul>
+                <li>Windows 7</li>
+                <li>Windows 8</li>
+                <li>Windows 10</li>
+            </ul>
+        </td>
+        <td valign="top"; style="width:33%;">
+            <h3>Linux</h3>
+            <ul>
+                <li>Fedora 22</li>
+                <li>Ubuntu 16.04</li>
+                <li>Ubuntu 18.04</li>
+            </ul>
+        </td>
+    </tr>
+</table> -->
+
+Choose your operating system:
+
+{.tabset}
+=========
+
+macOS
+-----
+
+### Installation
+On **macOS**, download Sublime Text 4 from its [download page](https://www.sublimetext.com/download). All versions of OS X/macOS from Mavericks 10.9 onwards are supported.
+
+### Updating
+By default, Sublime Text will search for updates each time you open it (or you can force a search via the menu: Sublime Text > Check for Updates...). If one is available, you should get a prompt inviting you to download it. Click "Download", then click "Install". The programme should restart and show you a changelog on its own.
+
+### Using From the Terminal
+You can open files in Sublime Text from a Finder window, but it's often useful to be able to do this from within a terminal as well:
+
+- Open a new terminal window (press Cmd+Space to open Spotlight Search then search for "terminal" and hit enter)
+- Check to see if it works already by running the following\*:
+```bash
+subl --version
+```
+- This might work immediately and return a build number (eg `Sublime Text Build 4152`) or it might not and return an error message (`zsh: command not found: subl`). If it's the former then you're done, but if it's the latter then it means you need to add the Sublime Text path to your `PATH` variable:
+    - Open `/etc/paths` in an editor with sudo permissions, eg:
+    ```bash
+sudo nano /etc/paths
+    ```
+    - Add the following to the list:
+    ```
+/Applications/Sublime Text.app/Contents/SharedSupport/bin
+    ```
+    - Save and exit (if you're using nano, this is Ctrl+O, Enter, then Ctrl+X, Enter)
+    - Close the terminal and open a new one, then try again:
+    ```bash
+subl --version
+    ```
+
+\*In older versions of macOS (and older versions of Sublime Text) the command is `sublime`, not `subl`
+
+### Usage and Configuration
+You can now open a file in Sublime Text from the terminal with:
+
+```bash
+subl <filename>
+```
+
+In order to be able to open a file in Sublime Text by double-clicking it you need to make Sublime Text the default editor for its file type. To do this, right-click a file in Finder > Get Info > under "Open with:" find "Sublime Text" in the dropdown menu > click "Change All..." > Continue.
+
+On **macOS Sierra** the default behaviour is for a full stop to be added when the space bar is pressed twice. This is a Sierra thing, not a Sublime Text thing. It can be disabled by going to System Preferences > Keyboard > Text > deselect "Add period with double-space" on the right.
+
+**Open New Files in the Existing Window**
+
+If the default behaviour is for Sublime Text to open files in **new windows** as opposed to the existing windows you have open, you can change this as follows:
+
+- Go to Sublime Text > Preferences > Settings. This will open a new window with two files open: the default programme settings on the left-hand side and the user settings on the right-hand side (both files will be called "Preferences.sublime-settings")
+- Add the following to the right-hand side window (the user settings):
+```json
+    // New files should open as tabs in the currently-open windows
+    "open_files_in_new_window": false
+```
+- Add this line *between* the two curly brackets
+- If this is NOT the last setting in the file, you should also add a comma at the end of the line:
+```json
+    // New files should open as tabs in the currently-open windows
+    "open_files_in_new_window": false,
+```
+
+**Ruler**
+
+For programming languages such as Python, it's [good practice](https://peps.python.org/pep-0008/#maximum-line-length) to have a maximum of 79 characters per line. Sublime Text allows you to put a 'ruler' at a distance of 80 characters away from the left-hand margin to help you stick to this convention while you code, but it gets turned off each time you close out. To make it permanent, open up the user Preferences as described above and add the following (again, with an appending comma if and only if other preferences follow this one):
+
+```json
+    // Set vertical ruler(s) in specified columns
+    "rulers": [80],
+```
+
+### Dictionaries
+- Turn spell check on by pressing F6 (Fn+F6 on some machines)
+- **Add words to the dictionary:**
+    - Go to Preferences > Settings (on macOS there is a keyboard shortcut: Cmd+Comma)
+    - This opens up your preferences file which, for the record, is located here:
+    ```text
+/Users/<username>/Library/Application Support/Sublime Text 4/Packages/User/Preferences.sublime-settings
+    ```
+    - Add words to an `"added_words"` section in the JSON User Settings file on the right-hand-side, for example:
+    ```json
+    {
+        "added_words":
+        [
+            "covid",
+            "furloughed",
+            "lockdown"
+        ]
+    }
+    ```
+    - To alphabetise this list, select the lines and go Edit > Sort Lines (shortcut: F9, or Fn+F9 on some machines)
+    - Hint: it's worthwhile creating a backup of your user preferences file. Then, when you next install Sublime Text on a new computer you can just paste your old preferences in.
+- **Installing other dictionaries**
+    - Go to https://github.com/titoBouzout/Dictionaries
+    - Download as a zip file > unzip it > rename the folder "Dictionaries"
+    - In Sublime Text, go to Preferences > Browse Packages...
+    - The Packages folder will open up
+    - Move your new "Dictionaries" folder here
+    - In Sublime Text, choose the language (eg View > Dictionaries > German)
+    - Be sure Spell Check is activated (F6 or View > Spell Check)
+
+### Insert Unicode Characters
+- **macOS Catalina**
+    - Press Ctrl+Cmd+Space to bring up the character input box
+    - Either manually search for the symbol you want and select it, or start typing to search by the characters' names
+    - Frustratingly, you can't search for Unicode sequences, so to get the poop emoji (💩) you need to search "poop" as opposed to "1f4a9" or "u+1f4a9"
+- **macOS Sierra**
+    - There's no simple way to do this via keyboard shortcuts. The complicated way is as follows:
+    - Go to System Preferences > Keyboard > Input Sources
+    - Enable Unicode Hex Input
+    - Each time you want to input a Unicode character:
+        - Switch to the Unicode hex input system. The default keyboard binding for this (Cmd+Space) conflicts with Spotlight Search, so you would need to change it to something different.
+        - Hold Alt
+        - Type the utf-16 hex code (which is different to the Unicode code) corresponding to the Unicode character: eg Alt+D, 8, 3, D, D, C, A, 9 will give you Mr Poopy (U+1F4A9): 💩
+
+[⇦ Back](../sublime_text.html)
+
+Ubuntu {.tabset}
+------
+
+### Ubuntu 22.04
+
+#### Installation
+The easiest way is to go to [the Sublime Text downloads page](https://www.sublimetext.com/download), click "direct downloads" next to "Linux repos" (don't click "Linux repos" itself) and download the "64 bit .deb" version. This can then be installed from the terminal using `dpkg -i` (which works for most .deb files):
+
+```{bash, eval = FALSE}
+cd Downloads
+sudo dpkg -i sublime-text_build-4143_amd64.deb
+```
+
+Replace `sublime-text_build-4143_amd64.deb` with the file name of the version you downloaded. You'll be prompted to enter your computer's password before the installation starts.
+
+This method is, in my opinion, better than the other options:
+
+- It's less complicated that the "apt" method described [here](https://www.sublimetext.com/docs/linux_repositories.html#apt)
+- It guarantees that you get the latest version (and hence that you avoid getting prompts asking you to update every time you open the programme). This is something that can be a problem when downloading from the Snap Store (the "Ubuntu Software" app that comes pre-installed with Ubuntu) as it often lags behind the latest version. If you download from the Snap Store and then try to upgrade, you can sometimes then end up with two versions of Sublime Text installed, and that's just confusing.
+
+#### Updating
+Sublime Text checks for updates automatically and, if one is available, it will prompt you to update when you open the programme. When this happens, click "Download" (which will take you to the "Download" page on the website) and then follow the same process as for installing:
+
+- Click "direct downloads" next to "Linux repos"
+- Choose the "64 bit .deb" option. This will download the latest version which can be installed from the terminal as described above:
+
+```{bash, eval = FALSE}
+cd Downloads
+sudo dpkg -i sublime-text_build-4143_amd64.deb
+```
+
+As before, replace `sublime-text_build-4143_amd64.deb` with the file name of the version you downloaded and you'll be prompted to enter your computer's password before the installation starts. You can check that it has worked by running `subl --version` which should return the programme name and build number.
+
+#### Usage and Configuration
+You can open a file in Sublime Text from the terminal with:
+
+```{bash, eval = FALSE}
+subl <filename>
+```
+
+It can also be done by right-clicking on a file > Open With Other Application > Sublime Text.
+
+In order to be able to open a file in Sublime Text by double-clicking it *you need to make Sublime Text the default editor for its file type.* To do this, right-click a file in Files > Properties (Ctrl+I is the keyboard shortcut) > Open With > find "Sublime Text" in the menu and click "Set as default".
+
+**Ruler**
+
+For programming languages such as Python, it's [good practice](https://peps.python.org/pep-0008/#maximum-line-length) to have a maximum of 79 characters per line. Sublime Text allows you to put a 'ruler' at a distance of 80 characters away from the left-hand margin to help you stick to this convention while you code, but it gets turned off each time you close out. Here's how to make it permanent:
+
+- Go to Preferences > Settings. This will open a new window with two files open: the default programme settings on the left-hand side and the user settings on the right-hand side (both files will be called "Preferences.sublime-settings")
+- Add the following to the right-hand side window (the user settings):
+```json
+    // Set vertical ruler(s) in specified columns
+    "rulers": [80]
+```
+- Add this line *between* the two curly brackets
+- If this is NOT the last setting in the file, you should also add a comma at the end of the line:
+```json
+    // Set vertical ruler(s) in specified columns
+    "rulers": [80],
+```
+
+#### Dictionaries
+- Turn spell check on by pressing F6 (Fn+F6 on some machines).
+- To add words to the dictionary:
+    - Go to Preferences > Settings
+    - This opens up your preferences file which, for the record, is located here:
+    ```text
+~/.config/sublime-text/Packages/User/Preferences.sublime-settings
+    ```
+    - Add words to an `"added_words"` section in the JSON User Settings file on the right-hand-side, for example:
+    ```json
+    {
+        "added_words":
+        [
+            "covid",
+            "furloughed",
+            "lockdown"
+        ]
+    }
+    ```
+    - To alphabetise this list, select the lines and go Edit > Sort Lines (shortcut: F9, or Fn+F9 on some machines)
+    - Hint: it's worthwhile creating a backup of your user preferences file. Then, when you next install Sublime Text on a new computer you can just paste your old preferences in.
+- Installing Other Dictionaries:
+    - Go to https://github.com/titoBouzout/Dictionaries
+    - Download as a zip file > unzip it > rename the folder "Dictionaries"
+    - In Sublime Text, go to Preferences > Browse Packages...
+    - The Packages folder will open up
+    - Move your new "Dictionaries" folder here
+    - In Sublime Text, choose the language (eg View > Dictionaries > German)
+    - Be sure Spell Check is activated (F6 or View > Spell Check)
+
+#### Insert Unicode Characters
+- Ctrl+Shift+U, &lt;Unicode sequence&gt;, Space
+- For Mr Poopy, it's Ctrl+Shift+U, 1, F, 4, A, 9, Space: 💩
+
+[⇦ Back](../sublime_text.html)
+
+### Ubuntu 20.04
+- **Installing Sublime Text 4** can be done from the "Ubuntu Software" app (AKA the Snap Store) that comes pre-installed with Ubuntu. Check that it has worked by running `subl --version` from the terminal; it should return a build number.
+- **Updating Sublime Text 4**:
+    + If an update is available, you should get a prompt inviting you to download it ("A new version of Sublime Text is available, download now?") when you open the programme
+    - The link takes you to https://www.sublimetext.com/download
+    - Go to "Linux repos" and follow the instructions for "apt":
+        - Install the GPG key:
+        ```{bash, eval = FALSE}
+wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+        ```
+        - Ensure apt is set up to work with https sources:
+        ```{bash, eval = FALSE}
+sudo apt-get install apt-transport-https
+        ```
+        - Use the stable channel:
+        ```{bash, eval = FALSE}
+echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
+        ```
+        - Update apt sources and install Sublime Text:
+        ```{bash, eval = FALSE}
+sudo apt-get update
+sudo apt-get install sublime-text
+        ```
+    - Sometimes it takes a few days for the latest Sublime Text version to be available for Ubuntu. In other words, even if you follow the above steps you might still see the "A new version of Sublime Text is available, download now?" prompt. You just have to live with that until it goes away.
+- **Opening a file in Sublime Text**:
+    + This can be done from the terminal with:
+    ```{bash, eval = FALSE}
+subl <filename>
+    ```
+    - It can be done by right-clicking on a file > Open With > Sublime Text
+        + If Sublime Text is not in this 'Open With' list, right-click on a file > Open With Other Application > Sublime Text
+    + In order to be able to open a file in Sublime Text by double-clicking it *you need to make Sublime Text the default editor for its file type.* To do this, right-click a file in Files > Properties (Ctrl+I is the keyboard shortcut) > Open With > find "Sublime Text" in the menu and click "Set as default".
+
+#### Dictionaries
+- Turn spell check on by pressing F6 (Fn+F6 on some machines).
+- To add words to the dictionary:
+    - Go to Preferences > Settings
+    - This opens up your preferences file which, for the record, is located here:
+    ```text
+~/.config/sublime-text/Packages/User/Preferences.sublime-settings
+    ```
+    - Add words to an `"added_words"` section in the JSON User Settings file on the right-hand-side, for example:
+    ```json
+    {
+        "added_words":
+        [
+            "covid",
+            "furloughed",
+            "lockdown"
+        ]
+    }
+    ```
+    - To alphabetise this list, select the lines and go Edit > Sort Lines (shortcut: F9, or Fn+F9 on some machines)
+    - Hint: it's worthwhile creating a backup of your user preferences file. Then, when you next install Sublime Text on a new computer you can just paste your old preferences in.
+- Installing Other Dictionaries:
+    - Go to https://github.com/titoBouzout/Dictionaries
+    - Download as a zip file > unzip it > rename the folder "Dictionaries"
+    - In Sublime Text, go to Preferences > Browse Packages...
+    - The Packages folder will open up
+    - Move your new "Dictionaries" folder here
+    - In Sublime Text, choose the language (eg View > Dictionaries > German)
+    - Be sure Spell Check is activated (F6 or View > Spell Check)
+
+#### Insert Unicode Characters
+- Ctrl+Shift+U, &lt;Unicode sequence&gt;, Space
+- For Mr Poopy, it's Ctrl+Shift+U, 1, F, 4, A, 9, Space: 💩
+
+[⇦ Back](../sublime_text.html)
+
+### Ubuntu 18.04
+- **Installing Sublime Text** can be done from the "Ubuntu Software" app (AKA the Snap Store) that comes pre-installed with Ubuntu. Check that it has worked by running `subl --version` from the terminal; it should return a build number.
+- **Updating Sublime Text** is a bit more complicated. It appears that there is a delay between a new version being released and it becoming available via Snap (the "Ubuntu Software" app). When it does become available it gets downloaded automatically, but up until that point it will notify you that a new version is available every time you open Sublime Text. It's annoying but just ignore it until it goes away. Don't try and download the latest version manually because it will try to install a separate version of Sublime Text parallel to the snap one. That could get complicated, so just leave it.
+- **Opening a file in Sublime Text**:
+    + This can be done from the terminal with:
+    ```{bash, eval = FALSE}
+subl <filename>
+    ```
+    - It can be done by right-clicking on a file > Open With Other Application > Sublime Text
+    + In order to be able to open a file in Sublime Text by double-clicking it *you need to make Sublime Text the default editor for its file type.* To do this, right-click a file in Files > Properties (Ctrl+I is the keyboard shortcut) > Open With > find and select "Sublime Text" then click "Set as default".
+    + If the default behaviour is to open new files in a new window, you can change this so that they open in the same window:
+        - Preferences > Settings > right-hand-side (User settings)
+        - Add `"open_files_in_new_window": false`
+- **Making Sublime Text the default editor:**
+    - Find "sublime_text.desktop" ("sublime-text.desktop" on some systems):
+    ```{bash, eval = FALSE}
+cd /
+sudo find . -name "sublime_text.desktop"
+    ```
+    - For me it was `./snap/sublime-test/24/opt/sublime_text/sublime_text.desktop`
+    - Open the default applications list:
+    ```{bash, eval = FALSE}
+subl /usr/share/applications/defaults.list
+    ```
+    - Ctrl+H > Find all instances of "gedit" > Replace them with "sublime_text"
+    - Save the file (you need your sudo password) > log out and back in again > you should be all set
+
+#### Dictionaries
+- Turn spell check on by pressing F6 (Fn+F6 on some machines).
+- To add words to the dictionary:
+    - Go to Preferences > Settings
+    - This opens up your preferences file which, for the record, is located here:
+    ```text
+~/.config/sublime-text/Packages/User/Preferences.sublime-settings
+    ```
+    - Add words to an `"added_words"` section in the JSON User Settings file on the right-hand-side, for example:
+    ```json
+    {
+        "added_words":
+        [
+            "covid",
+            "furloughed",
+            "lockdown"
+        ]
+    }
+    ```
+    - To alphabetise this list, select the lines and go Edit > Sort Lines (shortcut: F9, or Fn+F9 on some machines)
+    - Hint: it's worthwhile creating a backup of your user preferences file. Then, when you next install Sublime Text on a new computer you can just paste your old preferences in.
+- Installing Other Dictionaries:
+    - Go to https://github.com/titoBouzout/Dictionaries
+    - Download as a zip file > unzip it > rename the folder "Dictionaries"
+    - In Sublime Text, go to Preferences > Browse Packages...
+    - The Packages folder will open up
+    - Move your new "Dictionaries" folder here
+    - In Sublime Text, choose the language (eg View > Dictionaries > German)
+    - Be sure Spell Check is activated (F6 or View > Spell Check)
+
+#### Insert Unicode Characters
+- Ctrl+Shift+U, &lt;Unicode sequence&gt;, Space
+- For Mr Poopy, it's Ctrl+Shift+U, 1, F, 4, A, 9, Space: 💩
+
+[⇦ Back](../sublime_text.html)
+
+### Ubuntu 16.04
+Install from the terminal with:
+
+```bash
+sudo add-apt-repository ppa:webupd8team/sublime-text-4
+sudo apt-get update
+sudo apt-get install sublime-text-installer
+```
+
+You can open a file in Sublime Text from the terminal with:
+
+```bash
+subl <filename>
+```
+
+You can also right-click on a file > Open With > Sublime Text. If you try this and Sublime Text is not in the 'Open With' list, do the following:
+
+- Copy the contents of `/usr/share/applications/sublime_text.desktop` and paste them in here: `~/.local/share/applications/sublime_text.desktop`
+- In the terminal, run:
+
+```bash
+sudo update-desktop-database
+```
+
+In order to be able to open a file in Sublime Text by double-clicking it *you need to make Sublime Text the default editor for its file type.* To do this, right-click a file in Files > Properties (Ctrl+I is the keyboard shortcut) > Open With > find "Sublime Text" in the menu and click "Set as default".
+
+If the default behaviour is to open new files in a new window, you can change this so that they open in the same window:
+
+- Preferences > Settings > right-hand-side (User settings)
+- Add `"open_files_in_new_window": false`
+
+To make Sublime Text the default editor:
+
+- Install Ubuntu Tweak:
+```{bash, eval = FALSE}
+sudo add-apt-repository ppa:trebelnik-stefina/ubuntu-tweak
+sudo apt update
+sudo apt install ubuntu-tweak
+```
+- "Admins" tab > "File Type Manager" section > "Text" category from the left side bar > click on the "Associated Application" column to sort it by Application name > select the top entry with gedit, then Press and hold the Shift key and click on the last entry with gedit. Then click on the "Edit: button > select the desired application from they list and click "close"
+
+#### Dictionaries
+- Turn spell check on by pressing F6 (Fn+F6 on some machines).
+- To add words to the dictionary:
+    - Go to Preferences > Settings
+    - This opens up your preferences file which, for the record, is located here:
+    ```text
+~/.config/sublime-text/Packages/User/Preferences.sublime-settings
+    ```
+    - Add words to an `"added_words"` section in the JSON User Settings file on the right-hand-side, for example:
+    ```json
+    {
+        "added_words":
+        [
+            "covid",
+            "furloughed",
+            "lockdown"
+        ]
+    }
+    ```
+    - To alphabetise this list, select the lines and go Edit > Sort Lines (shortcut: F9, or Fn+F9 on some machines)
+    - Hint: it's worthwhile creating a backup of your user preferences file. Then, when you next install Sublime Text on a new computer you can just paste your old preferences in.
+- Installing Other Dictionaries:
+    - Go to https://github.com/titoBouzout/Dictionaries
+    - Download as a zip file > unzip it > rename the folder "Dictionaries"
+    - In Sublime Text, go to Preferences > Browse Packages...
+    - The Packages folder will open up
+    - Move your new "Dictionaries" folder here
+    - In Sublime Text, choose the language (eg View > Dictionaries > German)
+    - Be sure Spell Check is activated (F6 or View > Spell Check)
+
+#### Insert Unicode Characters
+- Ctrl+Shift+U, &lt;Unicode sequence&gt;, Space
+- For Mr Poopy, it's Ctrl+Shift+U, 1, F, 4, A, 9, Space: 💩
+
+[⇦ Back](../sublime_text.html)
+
+Fedora
+------
+On **Fedora 22**, install Sublime Text from the terminal with:
+
+```bash
+sudo rpm -v --import https://download.sublimetext.com/sublimehq-rpm-pub.gpg
+sudo dnf config-manager --add-repo https://download.sublimetext.com/rpm/stable/x86_64/sublime-text.repo
+sudo dnf install sublime-text
+```
+
+Open a file in Sublime Text from the terminal with:
+
+```bash
+subl <filename>
+```
+
+To make Sublime Text the default editor, right-click on a file > Properties > Open With > select "Sublime Text" > Set as default
+
+To insert Unicode characters:
+
+- Press Ctrl+Shift+U, &lt;Unicode sequence&gt;, Space
+- For example, to get Mr Poopy it's Ctrl+Shift+U, 1, F, 4, A, 9, Space: 💩
+
+[⇦ Back](../sublime_text.html)
+
+Windows
+-------
+On **Windows 7, 8 and 10**, install Sublime Text from its [download page](https://www.sublimetext.com/download).
+
+You can open a file in Sublime Text from the command prompt with:
+
+```bash
+subl.exe <filename>
+```
+
+If this doesn't work, it's probably because Sublime Text is not added to your PATH:
+
+- System Properties > Advanced System Settings > Advanced > Environment Variables (or run `sysdm.cpl` from Command Prompt)
+- Create a new system variable:
+    - Click "New...""
+    - Name: `SUBLIME`
+    - Value: `C:\Program Files\Sublime Text 4`
+    - Append to PATH: `;%SUBLIME%`
+- Restart Command Prompt
+
+To make Sublime Text the default editor, right-click on a file > Open with > choose default program
+
+[⇦ Back](../sublime_text.html)
+
+</font>

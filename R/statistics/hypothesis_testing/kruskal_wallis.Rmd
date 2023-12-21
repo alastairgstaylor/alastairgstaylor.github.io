@@ -1,0 +1,197 @@
+---
+title: '<font size="5">Statistics in R:</font><br>Kruskal-Wallis Rank Sum Test'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: false
+        # toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../../R.html)
+
+This example uses the ['chickwts'](https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/chickwts) built-in dataset which documents the weight of 71 chickens which had been fed different diets.
+
+> An experiment was conducted to measure and compare the effectiveness of various feed supplements on the growth rate of chickens. Newly-hatched chicks were randomly allocated into six groups, and each group was given a different feed supplement. Their weights in grams after six weeks are given along with feed types.
+
+Here's an idea of what the data looks like:
+
+```{r}
+print(head(chickwts, 15))
+```
+
+Let's see what the six groups (type of feed given to the chickens) are:
+
+```{r}
+for (feed_type in unique(chickwts$feed)) {
+    print(feed_type)
+}
+```
+
+Which Statistical Test Should Be Used?
+======================================
+
+```{r echo = FALSE}
+library(DiagrammeR)
+DiagrammeR::grViz(
+    "digraph statistical_tests {
+        rankdir='LR'
+
+        node [
+            fontname=Helvetica, shape=box, width=5, fontsize=42,
+            fillcolor=white, style=filled
+        ]
+                        'Two groups'
+                            TGParametric [label='Parametric']
+                                'One-sample t-test'
+                                'Paired t-test'
+                                'Unpaired t-test'
+                            TGNonparametric [label='Nonparametric']
+                                TGIndependent [label='Independent groups']
+                                    'Mann-Whitney U test'
+                                TGNonindependent [
+                                    label='Non-independent groups'
+                                ]
+                                    'Wilcoxon signed-rank test'
+                            MGParametric [label='Parametric']
+                                'ANOVA'
+
+        node [
+            fontname=Helvetica, shape=box, width=5, fillcolor=LightBlue,
+            style=filled, fontsize=42
+        ]
+            'Hypothesis'
+                'Continuous data'
+                    'Differences'
+                    'Means'
+                        'More than two groups'
+                            MGNonparametric [label='Nonparametric']
+                                MGIndependent [label='Independent groups']
+                                    'Kruskal-Wallis one-way ANOVA'
+
+        node [
+            fontname=Helvetica, shape=box, width=5, fontsize=42,
+            fillcolor=white, style=filled
+        ]
+                                MGNonindependent [
+                                    label='Non-independent groups'
+                                ]
+                                    'Friedman two-way ANOVA'
+                        'Variances'
+                    'Relationships'
+                        RIndependent [label='Independent groups']
+                            'Regression analysis'
+                                'Multiple Linear Regression'
+                        RNonindependent [label='Non-independent groups']
+                            'Correlation analysis'
+                                RParametric [label='Parametric']
+                                    'Pearson product-moment r correlation'
+                                RNonparametric [label='Nonparametric']
+                                    'Spearman Rank Correlation'
+                'Discrete, categorical data'
+                    'Chi-squared goodness-of-fit test'
+                    'Chi-squared independence test'
+
+        {
+            rank = same;
+            TGIndependent 'Mann-Whitney U test'
+            TGNonindependent 'Wilcoxon signed-rank test'
+            MGIndependent 'Kruskal-Wallis one-way ANOVA'
+            MGNonindependent 'Friedman two-way ANOVA'
+        }
+
+        'Hypothesis' -> 'Continuous data';
+            'Continuous data' -> 'Differences'
+                'Differences' -> 'Means'
+                    'Means' -> 'Two groups'
+                        'Two groups' -> TGParametric
+                            TGParametric -> 'One-sample t-test'
+                            TGParametric -> 'Paired t-test'
+                            TGParametric -> 'Unpaired t-test'
+                        'Two groups' -> TGNonparametric
+                            TGNonparametric -> TGIndependent
+                                TGIndependent -> 'Mann-Whitney U test'
+                            TGNonparametric -> TGNonindependent
+                                TGNonindependent -> 'Wilcoxon signed-rank test'
+                    'Means' -> 'More than two groups'
+                        'More than two groups' -> MGParametric
+                            MGParametric -> 'ANOVA'
+                        'More than two groups' -> MGNonparametric
+                            MGNonparametric -> MGIndependent
+                                MGIndependent -> 'Kruskal-Wallis one-way ANOVA'
+                            MGNonparametric -> MGNonindependent
+                                MGNonindependent -> 'Friedman two-way ANOVA'
+                'Differences' -> 'Variances'
+            'Continuous data' -> 'Relationships'
+                'Relationships' -> RIndependent
+                    RIndependent -> 'Regression analysis'
+                        'Regression analysis' -> 'Multiple Linear Regression'
+                'Relationships' -> RNonindependent
+                    RNonindependent -> 'Correlation analysis'
+                        'Correlation analysis' -> RParametric
+                            RParametric ->
+                                'Pearson product-moment r correlation'
+                        'Correlation analysis' -> RNonparametric
+                            RNonparametric -> 'Spearman Rank Correlation'
+        'Hypothesis' -> 'Discrete, categorical data'
+            'Discrete, categorical data' -> 'Chi-squared goodness-of-fit test'
+            'Discrete, categorical data' -> 'Chi-squared independence test'
+    }",
+    height = 400, width = 900
+)
+```
+
+- The (alternative) **hypothesis** is that there is a difference in growth rate between chickens fed different diets
+- The variable being measured is weight (mass), which is **continuous**
+- The hypothesis is that the chickens will weigh a **different** amount if they were fed a different diet
+- Specifically, the hypothesis is that the **mean** weight will be different depending on which diet was used
+- There are **more than two groups** (there are six)
+- We cannot assume that the data is Normally distributed, so a **nonparametric** test should be used
+- If one chicken grows particularly fast, it will not affect the growth rate of any of the other chickens. Thus the measurements are **independent**.
+
+Using the above flowchart we see that we should use Kruskal-Wallis one-way ANOVA.
+
+Performing the Kruskal-Wallis Test
+==================================
+The Kruskal-Wallis test is performed using the `kruskal.test()` function ([more info](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/kruskal.test)):
+
+- The independent variable is 'feed' and the dependent variable is 'weight'
+- When using an entire data frame as the input, the `kruskal.test()` function used the 'tilde' notation. This format requires that the dependent variable be specified first, followed by a tilde ("~", which means 'proportional to' in statistics), followed by the independent variable: `weight ~ feed`
+- The data frame being used ('chickwts') is indicated using the 'data' keyword argument
+
+```{r}
+kruskal.test(weight ~ feed, data = chickwts)
+```
+
+As we can see from the output the p-value was 5.113e-07, which is strong evidence in favour of the alternative hypothesis (which is that chicks grow at different rates when fed these different diets). The individual values that have been returned can be accessed by setting a variable equal to `kruskal.test()` and then indexing it:
+
+```{r results = "hold"}
+k <- kruskal.test(weight ~ feed, data = chickwts)
+
+# Get the Kruskal-Wallis rank sum statistic
+chi_squared <- k$statistic
+# Get the degrees of freedom of the approximate chi-squared distribution of
+# the test statistic
+df <- k$parameter
+# Get the p-value of the test
+p <- k$p.value
+# Get the character string "Kruskal-Wallis rank sum test"
+name_of_test <- k$method
+# Get a character string giving the names of the data
+comparison <- k$data.name
+
+# Print them all
+print(chi_squared)
+print(df)
+print(p)
+print(name_of_test)
+print(comparison)
+```
+
+[⇦ Back](../../../R.html)
+
+</font>

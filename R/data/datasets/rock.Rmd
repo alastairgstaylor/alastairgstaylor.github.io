@@ -1,0 +1,16 @@
+---
+title: rock
+subtitle: Measurements On Petroleum Rock Samples
+output:
+    html_document:
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+#### *A pre-loaded example dataset in R*
+Main page: https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/rock
+
+```{r}
+rock
+plot(rock)
+```

@@ -1,0 +1,54 @@
+---
+title: '<font size="5">Sublime Text 4</font><br>Using Bash in Sublime Text'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        # number_sections: true
+        # toc: true
+        includes:
+            before_body: ../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../sublime_text.html)
+
+Create a Bash Build System:
+
+- Create a new Sublime-Build file:
+    - Sublime-Build files tell Sublime Text how you want to run a script when you hit Ctrl+B
+    - Tools > Build System > New Build System...
+    - In the "untitled.sublime-build" that appears, replace everything with
+    ```json
+    {
+        "cmd": "bash \"$file\"",
+        "file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+        "selector"  : "source.shell",
+        "shell":"bash",
+
+        "windows": {
+            "path"  : "$path;c:\\mingw\\bin;c:\\mingw\\msys\\1.0\\bin",
+            "cmd"   : ["bash", "--login", "-i", "-c", "cd \"$file_path\"; \"$file\""]
+        },
+
+        "osx": {
+            "path"  : "$PATH:/usr/local/bin:/usr/X11R6/bin:/opt/X11/bin:/usr/texbin"
+        },
+
+        "linux": {
+            "env": {
+                // Manually set where a Python module looks when it uses shared object
+                // files or static libraries
+                "LD_LIBRARY_PATH": "/usr/local/lib"
+            }
+        }
+    }
+    ```
+- Save as "bash.sublime-build" in the default location. For the record, this location is:
+    + **macOS:** /Users/\<username\>/Library/Application Support/Sublime Text 3/Packages/User
+    + **Ubuntu:** /home/\<username\>/.config/sublime-text-3/Packages/User
+
+[⇦ Back](../sublime_text.html)
+
+</font>

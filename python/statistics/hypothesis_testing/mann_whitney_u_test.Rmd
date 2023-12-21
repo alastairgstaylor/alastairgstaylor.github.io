@@ -1,0 +1,300 @@
+---
+title: '<font size="5">Statistics in Python:</font><br>Mann–Whitney <i>U</i> Test'
+output:
+    html_document:
+        theme: paper
+        highlight: textmate
+        number_sections: true
+        toc: true
+        includes:
+            before_body: ../../../google_analytics.html
+---
+
+<font size="3">
+
+[⇦ Back](../../../python.html)
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(out.width = "100%")
+knitr::opts_chunk$set(engine.path = "/usr/bin/python3.11")
+```
+
+The **Mann–Whitney *U* test** can be used to compare the means of two groups of numerical data which are independent of each other.
+
+The code on this page uses the `numpy`, `matplotlib` and `scipy` packages. These can be installed from the terminal with:
+
+```{bash, eval = FALSE}
+$ python3.11 -m pip install numpy
+$ python3.11 -m pip install matplotlib
+$ python3.11 -m pip install scipy
+```
+
+where `python3.11` corresponds to the version of Python you have installed and are using.
+
+Example Data
+============
+This example is taken from Section 12.4 of *Probability and Statistics for Engineers and Scientists* by S M Ross (4th edition, 2009). A fictional experiment designed to test the effectiveness of two different anti-corrosion treatments for metal yielded the following results:
+
+- Treatment 1: 65.2, 67.1, 69.4, 78.2, 74, 80.3
+- Treatment 2: 59.4, 72.1, 68, 66.2, 58.5
+
+where the values represent the maximum depth of pits worn into the metal in thousands of a centimetre. This can be hard-codes as a dictionary of lists in Python as follows:
+
+```{python}
+# Raw data
+data = {
+    'Treatment 1': [65.2, 67.1, 69.4, 78.2, 74, 80.3],
+    'Treatment 2': [59.4, 72.1, 68, 66.2, 58.5]
+}
+```
+
+Here's what the data looks like graphically:
+
+```{python, eval = FALSE}
+import matplotlib.pyplot as plt
+import numpy as np
+
+#
+# Plot
+#
+# Boxplot
+meanprops = {'color': 'b'}
+bp = plt.boxplot(data.values(), showmeans=True, meanline=True, meanprops=meanprops)
+# Scatterplot for treatment 1
+y = data['Treatment 1']
+plt.scatter(np.zeros(len(y)) + 1, y, c='k')
+# Scatterplot for treatment 2
+y = data['Treatment 2']
+plt.scatter(np.ones(len(y)) + 1, y, c='k')
+# Tile and labels
+plt.title('The Effectiveness of Anti-Corrosion Treatments')
+plt.xlabel('Treatment')
+plt.ylabel('Maximum depth of pits [10e-3 cm]')
+# Legend
+plt.legend([bp['medians'][0], bp['means'][0]], ['Medians', 'Means'])
+```
+
+```{python, echo = FALSE, results = 'hide'}
+import matplotlib.pyplot as plt
+import numpy as np
+
+#
+# Plot
+#
+# Boxplot
+meanprops = {'color': 'b'}
+bp = plt.boxplot(data.values(), showmeans=True, meanline=True, meanprops=meanprops)
+# Scatterplot for treatment 1
+y = data['Treatment 1']
+plt.scatter(np.zeros(len(y)) + 1, y, c='k')
+# Scatterplot for treatment 2
+y = data['Treatment 2']
+plt.scatter(np.ones(len(y)) + 1, y, c='k')
+# Tile and labels
+plt.title('The Effectiveness of Anti-Corrosion Treatments')
+plt.xlabel('Treatment')
+plt.ylabel('Maximum depth of pits [10e-3 cm]')
+# Legend
+plt.legend([bp['medians'][0], bp['means'][0]], ['Medians', 'Means'])
+```
+
+Choose a Statistical Test
+=========================
+Looking at the data plotted above, the question we want to ask is:
+
+**Is the average amount of wear different between samples given different anti-corrosion treatments?**
+
+If it is, it would suggest that that the effectiveness of the treatments is different.
+
+Parametric vs Non-Parametric
+----------------------------
+Before we can answer this question, we need to decide if we should use **parametric** or **non-parametric** statistics. Parametric statistics are based on assumptions about the data's distribution (whereas non-parametric statistics are not) and reasons to choose them include:
+
+- Your data is normally distributed
+- Your data is not normally distributed but the sample size is large:
+    + n > 20 if you only have one group
+    + n > 15 in each group if you have 2 to 9 groups
+    + n > 20 in each group if you have 10 to 12 groups
+- The spread of data in each group is different
+- The data is skewed (in other words, the *median* is more representative of the central tendency than the *mean*)
+- There is a need to increase the statistical power (parametric tests usually have more power and so are more likely to detect a significant difference when one truly exists)
+
+As the sample size in this example dataset is small, **we should choose to do non-parametric statistics** and tweak our research question so that it becomes "is the *median* amount of wear different?"<sup>1</sup>. In other words, are the orange lines in the plot above (the medians) at different heights?
+
+<sup>1</sup>when doing parametric statistics you should use the *mean*; when doing non-parametric statistics you should use the *median*.
+
+Set a Hypothesis
+----------------
+In order to answer the research question ("is the median amount of wear different?") we now need to formulate it properly as a *null hypothesis* with a corresponding *alternate hypothesis*:
+
+- H<sub>0</sub>: true median amount of wear is the same for both treatments
+- H<sub>1</sub>: true median amount of wear is not the same for both treatments
+
+Choose a Test
+-------------
+Now that we have hypotheses, we can follow a statistical test selection process:
+
+- Our data is **continuous** because it is made up of measurements that are numbers (not discrete categories or ranks)
+- We are interested in the **difference** between the amount of wear in one group compared to the other (not the *relationship* between the amount of wear and something else)
+- Specifically, we are interested in the difference of the **average** (median) amount of wear (not the *variance* in the amount of wear)
+- We have **two groups** because there are two treatments being compared
+- As discussed above, we are doing **non-parametric statistics**
+- Our measurements are **independent** of each other: the amount that one sample corrodes does not affect how much another sample corrodes
+
+Looking at the flowchart below tells us that we should thus be using the Mann-Whitney *U* test to test our hypothesis:
+
+```{r, echo=FALSE}
+# install.packages("DiagrammeR", repos = "http://cran.us.r-project.org")
+library(DiagrammeR)
+# fillcolor='#c9daf8'
+# fillcolor='#d9ead3'
+
+DiagrammeR::grViz(
+    "digraph statistical_tests {
+        rankdir='LR'
+
+        node [fontname=Helvetica, shape=box, style=filled, fillcolor=white]
+        start [label='Identify the\ndependent/outcome\nvariable(s) (DVs) and\nindependent/explanatory\nvariable(s) (IVs)', fillcolor='#ea9999']
+            dependent [label='Data type of\nthe DV?', fillcolor='#c9daf8']
+                sc_datatypes [label='Data type of\nthe IV?', fillcolor='#c9daf8']
+                    sc_true [label='True independent\nvariable?']
+                        yes_number [label='Number of\ngroups/samples\nfor the IV?']
+                            one_choose [label='Choose a fit']
+                                'Simple Linear\nRegression' [style=rounded]
+                                'Quadratic\nRegression' [style=rounded]
+                            'Multiple Linear\nRegression' [style=rounded]
+                        no_parametric [label='Parametric?']
+                            'Pearson\ncorrelation\ncoefficient' [style=rounded]
+                            'Spearmans rank\ncorrelation\ncoefficient' [style=rounded, label=<Spearman&rsquo;s rank<BR/>correlation<BR/>coefficient>]
+                    none_parametric [label='Parametric?']
+                        'One-sample t-test' [style=rounded, label=<One-sample <I>t</I>-test>]
+                    cd_number [label='Number of\ngroups/samples\nfor the IV?', fillcolor='#c9daf8']
+                        two_parametric [label='Parametric?', fillcolor='#c9daf8']
+                            true_independent [label='Independent\ngroups/sample?']
+                                'Unpaired\ntwo-sample\nt-test' [style=rounded, label=<Unpaired<BR/>two-sample<BR/><I>t</I>-test>]
+                                'Paired\ntwo-sample\nt-test' [style=rounded, label=<Paired<BR/>two-sample<BR/><I>t</I>-test>]
+                            false_independent [label='Independent\ngroups/sample?', fillcolor='#c9daf8']
+                                'Mann-Whitney\nU test' [fillcolor='#d9ead3', label=<Mann-Whitney<BR/> <I>U </I>test>]
+                                'Wilcoxon\nsigned-rank test' [style=rounded]
+                        more_parametric [label='Parametric?']
+                            'ANOVA' [style=rounded]
+                            false_independent2 [label='Independent\ngroups/sample?']
+                                'Kruskal-Wallis\none-way ANOVA' [style=rounded]
+                                'Friedman\ntwo-way ANOVA' [style=rounded]
+                cd_datatype [label='Type of\ncategorical\ndata?']
+                    binary_datatype [label='Data type of\nthe IV?']
+                        'One-sample Z-test' [style=rounded, label=<One-sample <I>Z</I>-test>]
+                        'Two-sample Z-test' [style=rounded, label=<Two-sample <I>Z</I>-test>]
+                        'χ² test for trend' [style=rounded]
+                    ordinal_datatype [label='Data type of\nthe IV?']
+                        'χ² test for trend' [style=rounded]
+                    nominal_datatype [label='Data type of\nthe IV?']
+                        none_additional [label='Additional DV?']
+                            'χ² goodness-of-fit test' [style=rounded]
+                            'χ² independence test' [style=rounded]
+                        'χ² homogeneity test' [style=rounded]
+
+        {rank=same; start -> dependent}
+        dependent -> sc_datatypes [label='Scale/\nContinuous']
+            sc_datatypes -> sc_true [label='Scale/\nContinuous']
+                sc_true -> yes_number [label='Yes\n(regression \nanalysis)']
+                    yes_number -> one_choose [label='One']
+                        one_choose -> 'Simple Linear\nRegression'
+                        one_choose -> 'Quadratic\nRegression'
+                    yes_number -> 'Multiple Linear\nRegression' [label='More']
+                sc_true -> no_parametric [label='No\n(correlation \nanalysis)']
+                    no_parametric -> 'Pearson\ncorrelation\ncoefficient' [label='Yes']
+                    no_parametric -> 'Spearmans rank\ncorrelation\ncoefficient' [label='No']
+            sc_datatypes -> none_parametric [label='None\n(no IV)']
+                none_parametric -> 'One-sample t-test' [label='Yes']
+            sc_datatypes -> cd_number [label='Categorical/\nDiscrete']
+                cd_number -> two_parametric [label=Two]
+                    two_parametric -> true_independent [label=Yes]
+                        true_independent -> 'Unpaired\ntwo-sample\nt-test' [label=Yes]
+                        true_independent -> 'Paired\ntwo-sample\nt-test' [label=No]
+                    two_parametric -> false_independent [label=No]
+                        false_independent -> 'Mann-Whitney\nU test' [label=Yes]
+                        false_independent -> 'Wilcoxon\nsigned-rank test' [label=No]
+                cd_number -> more_parametric [label=More]
+                    more_parametric -> 'ANOVA' [label=Yes]
+                    more_parametric -> false_independent2 [label=No]
+                        false_independent2 -> 'Kruskal-Wallis\none-way ANOVA' [label=Yes]
+                        false_independent2 -> 'Friedman\ntwo-way ANOVA' [label=No]
+        dependent -> cd_datatype [label='Categorical/\nDiscrete']
+            cd_datatype -> binary_datatype [label='Binary\n(nominal)']
+                binary_datatype -> 'One-sample Z-test' [label='None\n(no IV)']
+                binary_datatype -> 'Two-sample Z-test' [label='Binary\n(nominal)']
+                binary_datatype -> 'χ² test for trend' [label=Ordinal]
+            cd_datatype -> ordinal_datatype [label='Ordinal']
+                ordinal_datatype -> 'χ² test for trend' [label='Binary\n(nominal)']
+            cd_datatype -> nominal_datatype [label='Nominal\n(incl binary)']
+                nominal_datatype -> none_additional [label='None\n(no IV)']
+                    none_additional -> 'χ² goodness-of-fit test' [label=No]
+                    none_additional -> 'χ² independence test' [label=Yes]
+                nominal_datatype -> 'χ² homogeneity test' [label=Nominal]
+
+    labelloc='t';
+    label='Flowchart for Choosing a Statistical Test';
+    fontsize=30;
+    }",
+    height=650,
+    width=1000
+)
+```
+
+Mann-Whitney *U* Test
+=====================
+The SciPy package makes it incredibly easy to perform the test: just use the `mannwhitneyu()` function!
+
+```{python}
+from scipy.stats import mannwhitneyu
+
+# Perform the Mann-Whitney U test
+statistic, pvalue = mannwhitneyu(data['Treatment 1'], data['Treatment 2'])
+
+print(f'Mann-Whitney U test: U = {int(statistic)}, p = {pvalue:6.4f}')
+```
+
+Interpreting the Result
+-----------------------
+This *p*-value is large (>0.05), which means that we fail to reject H<sub>0</sub> and conclude that there is not a statistically significant difference between the two treatments (*p* > 0.05).
+
+Often, you will see this type of result reported using asterisks to indicate the significance level (α) associated with it. Additionally, if the *p*-value is very small it's usually just reported as "<0.001" rather than as an exact value. Here are functions to add in this formatting (not that it's relevant in this example!):
+
+```{python}
+def get_significance(p):
+    """Returns the significance of a p-values as a string of stars."""
+    if p <= 0.001:
+        return ' (***)'
+    elif p <= 0.01:
+        return ' (**)'
+    elif p <= 0.05:
+        return ' (*)'
+    elif p <= 0.1:
+        return ' (.)'
+    else:
+        return ''
+
+
+def round_p_value(p):
+    """Round a small p-value so that it is human-readable."""
+    if p < 0.001:
+        return '<0.001'
+    else:
+        return f'{p:5.3}'
+
+
+p_rounded = round_p_value(pvalue)
+significance = get_significance(pvalue)
+print(f'The p-value is {p_rounded}{significance}')
+```
+
+Can't Get Enough?
+=================
+This page showed one method of calculating the Mann-Whitney test which, in my opinion, is the best for practical use. However, if you're interested in doing a deep dive into how the test works and variations on the method used by SciPy's `mannwhitneyu()` by default, take a look [here](mann_whitney_u_test/comparison_of_methods.html).
+
+If you're interested in adding significance bars to boxplots after having used the Mann-Whitney test to find a significant difference, look over [here](../../graphs/ax_based/boxplots_significance.html).
+
+[⇦ Back](../../../python.html)
+
+</font>
